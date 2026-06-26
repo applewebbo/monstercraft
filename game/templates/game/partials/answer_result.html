@@ -1,0 +1,13 @@
+{% if correct %}
+    <script>
+        resolveEncounter(true, {{ x }}, {{ y }});
+    </script>
+{% else %}
+    <div class="modal-overlay" id="question-modal-container">
+        <div class="modal-content result-content">
+            <h2 style="color: #f44336;">Risposta Sbagliata!</h2>
+            <p>Ahi! Perdi una vita.</p>
+            <button id="htmx-result-btn" onclick="resolveEncounter(false, {{ x }}, {{ y }})" class="btn-option">Ritirati</button>
+        </div>
+    </div>
+{% endif %}

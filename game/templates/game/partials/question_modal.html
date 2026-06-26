@@ -1,0 +1,45 @@
+<style>
+    .btn-option.selected {
+        background: #4CAF50 !important;
+    }
+</style>
+<div class="modal-overlay" id="question-modal-container"
+     x-data="{ 
+         selectedIndex: 0, 
+         maxIndex: {% if question.option_4 %}3{% else %}2{% endif %},
+         handleKeydown(e) {
+             if (e.key === 'ArrowDown') {
+                 e.preventDefault();
+                 this.selectedIndex = (this.selectedIndex < this.maxIndex) ? this.selectedIndex + 1 : 0;
+             } else if (e.key === 'ArrowUp') {
+                 e.preventDefault();
+                 this.selectedIndex = (this.selectedIndex > 0) ? this.selectedIndex - 1 : this.maxIndex;
+             } else if (e.key === 'Enter') {
+                 e.preventDefault();
+                 const buttons = this.$el.querySelectorAll('.options button[name=\'answer\']');
+                 if (buttons[this.selectedIndex]) {
+                     buttons[this.selectedIndex].click();
+                 }
+             }
+         }
+     }"
+     @keydown.window="handleKeydown($event)">
+    <div class="modal-content" style="border-radius: 8px;">
+        <h2>Un Mostro ti sfida!</h2>
+        <p class="question-text">{{ question.text }}</p>
+        <form hx-post="{% url 'game:answer' %}" hx-target="#question-modal-container" hx-swap="outerHTML">
+            <input type="hidden" name="question_id" value="{{ question.id }}">
+            <input type="hidden" name="x" value="{{ x }}">
+            <input type="hidden" name="y" value="{{ y }}">
+            
+            <div class="options" @mouseleave="selectedIndex = 0">
+                <button type="submit" name="answer" value="1" class="btn-option" :class="{'selected': selectedIndex === 0}" @mouseenter="selectedIndex = 0">{{ question.option_1 }}</button>
+                <button type="submit" name="answer" value="2" class="btn-option" :class="{'selected': selectedIndex === 1}" @mouseenter="selectedIndex = 1">{{ question.option_2 }}</button>
+                <button type="submit" name="answer" value="3" class="btn-option" :class="{'selected': selectedIndex === 2}" @mouseenter="selectedIndex = 2">{{ question.option_3 }}</button>
+                {% if question.option_4 %}
+                <button type="submit" name="answer" value="4" class="btn-option" :class="{'selected': selectedIndex === 3}" @mouseenter="selectedIndex = 3">{{ question.option_4 }}</button>
+                {% endif %}
+            </div>
+        </form>
+    </div>
+</div>

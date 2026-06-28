@@ -8,9 +8,21 @@
         Esplora il dungeon, rispondi alle domande dei mostri e sopravvivi alle trappole!<br>
         Quanti punti riuscirai a totalizzare?
     </p>
-    <a href="{% url 'game:game' %}?level=1&score=0" class="btn-option" style="text-decoration: none; font-size: 1.2rem; padding: 15px 30px; display: inline-block; background-color: #F57C00; border-color: #E65100;">
-        🎮 START GAME
-    </a>
+    <form action="{% url 'game:start' %}" method="POST" style="display: flex; flex-direction: column; align-items: center; gap: 20px;">
+        {% csrf_token %}
+        <div style="margin-bottom: 10px;">
+            <label for="age_group" style="font-size: 1rem; color: #FFEB3B; margin-right: 15px; font-family: 'Press Start 2P', cursive;">Fascia d'Età:</label>
+            <select name="age_group" id="age_group" style="padding: 10px; font-size: 0.8rem; border-radius: 5px; background: #333; color: white; border: 2px solid #555; font-family: 'Press Start 2P', cursive;">
+                <option value="5-8">5-8 anni</option>
+                <option value="9-12" selected>9-12 anni</option>
+                <option value="13-17">13-17 anni</option>
+                <option value="ADULT">Adulto</option>
+            </select>
+        </div>
+        <button type="submit" class="btn-option" style="font-size: 1.2rem; padding: 15px 30px; display: inline-block; background-color: #F57C00; border-color: #E65100; cursor: pointer;">
+            🎮 START GAME
+        </button>
+    </form>
     <a href="{% url 'game:leaderboard' %}" class="btn-option" style="text-decoration: none; font-size: 1.2rem; padding: 15px 30px; display: inline-block; margin-top: 20px; background-color: #4CAF50; border-color: #388E3C;">
         🏆 LEADERBOARD
     </a>

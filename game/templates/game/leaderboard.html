@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load static %}
 
 {% block title %}Leaderboard - MonsterCraft{% endblock %}
 
@@ -35,7 +36,7 @@
 
 {% block content %}
 <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 80vh; text-align: center; gap: 30px; margin-top: 50px;">
-    <h1 style="color: #FFEB3B; font-family: 'Press Start 2P', cursive; text-shadow: 4px 4px 0 #000;">LEADERBOARD</h1>
+    <img src="{% static 'game/images/leaderboard_logo.jpg' %}" alt="Leaderboard" style="width: 100%; max-width: 600px; border-radius: 10px; margin-bottom: 10px;">
     
     <table class="leaderboard-table">
         <thead>

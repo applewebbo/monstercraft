@@ -1,33 +1,31 @@
 import json
 import random
 from django.shortcuts import render, redirect
-
-from django.http import HttpResponseBadRequest
-from .models import Question, Score
+from django.http import HttpResponseBadRequest, JsonResponse
+from .models import Question, Score, HangmanWord
 
 def start(request):
     """
-    Renders the Start Screen of MonsterCraft.
+    Renders the Start Screen of MonsterCraft and handles game initialization.
     """
+    if request.method == 'POST':
+        request.session['level'] = 1
+        request.session['score'] = 0
+        request.session['lives'] = 3
+        request.session['asked_questions'] = []
+        request.session['age_group'] = request.POST.get('age_group', '9-12')
+        request.session.modified = True
+        return redirect('game:game')
+        
     return render(request, 'game/start.html')
 
 def index(request):
     """
     Renders the main game map.
-    The grid size increases with the level, starting at 5x5 up to a maximum of 25x25.
     """
-    try:
-        level = int(request.GET.get('level', 1))
-    except ValueError:
-        level = 1
-        
-    if level == 1:
-        request.session['asked_questions'] = []
-        
-    try:
-        score = int(request.GET.get('score', 0))
-    except ValueError:
-        score = 0
+    level = request.session.get('level', 1)
+    score = request.session.get('score', 0)
+    lives = request.session.get('lives', 3)
     
     # Calculate grid size based on level
     grid_size = min(5 + (level - 1) * 2, 25)
@@ -127,6 +125,7 @@ def index(request):
     context = {
         'level': level,
         'score': score,
+        'lives': lives,
         'grid_size': grid_size,
         'map_data_json': json.dumps(grid),
     }
@@ -136,10 +135,7 @@ def get_question(request):
     """
     Restituisce un frammento HTML (modale) tramite HTMX con una domanda casuale in base alla difficoltà.
     """
-    try:
-        level = int(request.GET.get('level', 1))
-    except ValueError:
-        level = 1
+    level = request.session.get('level', 1)
         
     # Difficoltà crescente
     if level <= 2:
@@ -149,17 +145,18 @@ def get_question(request):
     else:
         difficulty = 3
 
+    age_group = request.session.get('age_group', '9-12')
     asked = request.session.get('asked_questions', [])
     
-    question = Question.objects.filter(difficulty=difficulty).exclude(id__in=asked).order_by('?').first()
+    question = Question.objects.filter(age_group=age_group, difficulty=difficulty).exclude(id__in=asked).order_by('?').first()
     
     # Fallback se finite quelle della difficoltà corrente
     if not question:
-        question = Question.objects.exclude(id__in=asked).order_by('?').first()
+        question = Question.objects.filter(age_group=age_group).exclude(id__in=asked).order_by('?').first()
         
     # Fallback se finite tutte in assoluto
     if not question:
-        question = Question.objects.order_by('?').first()
+        question = Question.objects.filter(age_group=age_group).order_by('?').first()
         
     if question:
         asked.append(question.id)
@@ -223,3 +220,78 @@ def save_score(request):
 def leaderboard(request):
     scores = Score.objects.all().order_by('-score', '-level')[:10]
     return render(request, 'game/leaderboard.html', {'scores': scores})
+
+def hangman(request):
+    """
+    Renders the Hangman mini-game between levels.
+    """
+    level = request.session.get('level', 1)
+    score = request.session.get('score', 0)
+    lives = request.session.get('lives', 3)
+        
+    # Difficoltà e tentativi decrescenti, curva ammorbidita
+    if level <= 4:
+        difficulty = 1
+        max_attempts = 7
+    elif level <= 8:
+        difficulty = 1
+        max_attempts = 6
+    elif level <= 12:
+        difficulty = 2
+        max_attempts = 5
+    elif level <= 16:
+        difficulty = 2
+        max_attempts = 4
+    else:
+        difficulty = 3
+        max_attempts = 3
+        
+    age_group = request.session.get('age_group', '9-12')
+    word_obj = HangmanWord.objects.filter(age_group=age_group, difficulty=difficulty).order_by('?').first()
+    
+    if not word_obj:
+        word_obj = HangmanWord.objects.filter(age_group=age_group).order_by('?').first()
+        
+    if not word_obj:
+        word_obj = HangmanWord.objects.order_by('?').first()
+        
+    # Se proprio non ci sono parole nel DB, ne usiamo una di default
+    if not word_obj:
+        class DefaultWord:
+            word = "MONSTER"
+            hint = "Una creatura spaventosa"
+        word_obj = DefaultWord()
+        
+    word = word_obj.word.upper()
+    
+    # Scegliamo un paio di lettere da rivelare (circa 25% della parola)
+    num_revealed = max(1, len(word) // 4)
+    revealed_letters = list(set(random.sample(word, num_revealed)))
+    
+    context = {
+        'level': level,
+        'score': score,
+        'lives': lives,
+        'word': word,
+        'hint': word_obj.hint,
+        'revealed_letters': json.dumps(revealed_letters),
+        'max_attempts': max_attempts,
+    }
+    
+    return render(request, 'game/hangman.html', context)
+
+def update_state(request):
+    """
+    Aggiorna in modo asincrono lo stato del gioco nella sessione.
+    """
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            request.session['level'] = data.get('level', request.session.get('level', 1))
+            request.session['score'] = data.get('score', request.session.get('score', 0))
+            request.session['lives'] = data.get('lives', request.session.get('lives', 3))
+            request.session.modified = True
+            return JsonResponse({'status': 'ok'})
+        except Exception:
+            return HttpResponseBadRequest("Invalid payload")
+    return HttpResponseBadRequest("Invalid method")

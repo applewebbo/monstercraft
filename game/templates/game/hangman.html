@@ -1,0 +1,320 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}MonsterCraft - Enigma del Dungeon{% endblock %}
+
+{% block extra_head %}
+<style>
+    .hangman-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 30px;
+        margin-top: 50px;
+        font-family: 'Press Start 2P', cursive;
+        padding: 40px;
+    }
+
+    .word-display {
+        display: flex;
+        gap: 15px;
+        margin: 20px 0;
+    }
+
+    .letter-box {
+        width: 40px;
+        height: 50px;
+        border-bottom: 4px solid #fff;
+        display: flex;
+        justify-content: center;
+        align-items: flex-end;
+        font-size: 32px;
+        color: #ffeb3b;
+        padding-bottom: 5px;
+        text-shadow: 2px 2px 0 #000;
+    }
+
+    .keyboard {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        justify-content: center;
+        max-width: 600px;
+        margin-top: 20px;
+    }
+
+    .key-btn {
+        width: 45px;
+        height: 45px;
+        background-color: #222;
+        border: 2px solid #fff;
+        color: #fff;
+        font-family: 'Press Start 2P', cursive;
+        font-size: 16px;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .key-btn:hover:not(:disabled) {
+        background-color: #444;
+        transform: translateY(-2px);
+    }
+
+    .key-btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+
+    .key-correct {
+        background-color: #4CAF50 !important;
+        border-color: #388E3C !important;
+    }
+
+    .key-wrong {
+        background-color: #f44336 !important;
+        border-color: #d32f2f !important;
+    }
+
+    .status-panel {
+        background: #222;
+        padding: 20px;
+        border: 4px solid #fff;
+        border-radius: 8px;
+        text-align: center;
+        box-shadow: 8px 8px 0px #555;
+        width: 100%;
+        max-width: 600px;
+    }
+
+    .attempts-left {
+        color: #f44336;
+        font-size: 24px;
+        margin-top: 15px;
+    }
+
+    .hint {
+        color: #03a9f4;
+        margin-bottom: 20px;
+        line-height: 1.5;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<script id="hangman-config" type="application/json">
+{
+    "word": "{{ word|escapejs }}",
+    "hint": "{{ hint|escapejs }}",
+    "initialRevealed": {{ revealed_letters|safe }},
+    "level": {{ level }},
+    "score": {{ score }},
+    "lives": {{ lives }},
+    "maxAttempts": {{ max_attempts }}
+}
+</script>
+
+<canvas id="hyperspace-canvas" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -10; background-color: #000; image-rendering: pixelated;"></canvas>
+<script>
+(function(){
+    const canvas = document.getElementById('hyperspace-canvas');
+    const ctx = canvas.getContext('2d');
+    let width, height;
+    
+    function resize() {
+        // Mantiene una risoluzione fissa e bassissima (stile DOS/8-bit) scalata poi dal CSS
+        const ratio = window.innerWidth / window.innerHeight;
+        height = canvas.height = 180;
+        width = canvas.width = Math.floor(180 * ratio);
+    }
+    window.addEventListener('resize', resize);
+    resize();
+    
+    // Meno stelle per un look retrò più pulito
+    const numStars = 150;
+    const stars = [];
+    
+    for (let i = 0; i < numStars; i++) {
+        stars.push({
+            x: Math.random() * 2000 - 1000,
+            y: Math.random() * 2000 - 1000,
+            z: Math.random() * 2000,
+            color: i % 4 === 0 ? '#03a9f4' : (i % 5 === 0 ? '#FFEB3B' : '#ffffff')
+        });
+    }
+    
+    function draw() {
+        // Nessun motion blur, nero solido
+        ctx.fillStyle = '#000000';
+        ctx.fillRect(0, 0, width, height);
+        
+        const cx = width / 2;
+        const cy = height / 2;
+        
+        for (let i = 0; i < numStars; i++) {
+            let star = stars[i];
+            star.z -= 50; // Velocità warp aumentata
+            
+            if (star.z <= 1) {
+                star.z = 2000;
+                star.x = Math.random() * 2000 - 1000;
+                star.y = Math.random() * 2000 - 1000;
+            }
+            
+            let x = Math.floor(cx + (star.x / star.z) * width);
+            let y = Math.floor(cy + (star.y / star.z) * width);
+            
+            // Dimensione "pixel" a scatti
+            let size = Math.max(1, Math.floor((1 - star.z / 2000) * 3));
+            
+            ctx.fillStyle = star.color;
+            ctx.fillRect(x, y, size, size);
+        }
+        
+        // Ritardo per simulare basso framerate tipico 8-bit, ma più veloce (30 fps)
+        setTimeout(() => {
+            requestAnimationFrame(draw);
+        }, 1000 / 30);
+    }
+    draw();
+})();
+</script>
+
+<div class="hangman-container" 
+     x-data="hangmanGame(JSON.parse(document.getElementById('hangman-config').textContent))"
+     @keydown.window="handleKeydown($event)">
+
+    <img src="{% static 'game/images/gatekeeper.jpg' %}" alt="Guardiano del Portale" style="width: 160px; height: 160px; border-radius: 8px; border: 4px solid #fff; box-shadow: 6px 6px 0px #03a9f4; margin-bottom: -10px; image-rendering: pixelated;">
+    <h2 style="color: #4CAF50; text-shadow: 2px 2px 0 #000; text-align: center;">ENIGMA DEL PORTALE</h2>
+
+    <div class="status-panel">
+        <p class="hint" x-show="hint" x-text="hint"></p>
+        
+        <div class="word-display" style="justify-content: center; flex-wrap: wrap;">
+            <template x-for="(letter, index) in word.split('')" :key="index">
+                <div class="letter-box">
+                    <span x-show="guessedLetters.includes(letter) || initialRevealed.includes(letter)" x-text="letter"></span>
+                </div>
+            </template>
+        </div>
+
+        <div class="attempts-left">
+            Tentativi: <span x-text="maxAttempts - wrongAttempts"></span>
+        </div>
+    </div>
+
+    <!-- Keyboard -->
+    <div class="keyboard" x-show="status === 'playing'">
+        <template x-for="char in 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('')" :key="char">
+            <button class="key-btn" 
+                    :class="{
+                        'key-correct': guessedLetters.includes(char) && word.includes(char),
+                        'key-wrong': guessedLetters.includes(char) && !word.includes(char)
+                    }"
+                    :disabled="guessedLetters.includes(char) || initialRevealed.includes(char)"
+                    @click="guess(char)"
+                    x-text="char">
+            </button>
+        </template>
+    </div>
+
+    <!-- Result Area -->
+    <div x-show="status !== 'playing'" style="text-align: center; margin-top: 20px;" x-cloak>
+        <h2 x-show="status === 'won'" style="color: #4CAF50;">PORTALE APERTO! (+50 pt)</h2>
+        <h2 x-show="status === 'lost'" style="color: #f44336;">PORTALE FORZATO... (-1 VITA)</h2>
+        <p x-show="status === 'lost'">La parola era: <strong x-text="word" style="color: #FFEB3B;"></strong></p>
+        
+        <button type="button" @click="proceedToLevel()" class="btn-option" style="margin-top: 20px; background-color: #03a9f4;">
+            ENTRA NEL LIVELLO <span x-text="level + 1"></span>
+        </button>
+    </div>
+
+</div>
+
+<script>
+document.addEventListener('alpine:init', () => {
+    Alpine.data('hangmanGame', (config) => ({
+        word: config.word,
+        hint: config.hint,
+        initialRevealed: config.initialRevealed,
+        guessedLetters: [],
+        maxAttempts: config.maxAttempts,
+        wrongAttempts: 0,
+        status: 'playing', // 'playing', 'won', 'lost'
+        level: config.level,
+        score: config.score,
+        lives: config.lives,
+
+        init() {
+            // Check if already won (rare but possible if revealed letters cover the whole word)
+            this.checkWin();
+        },
+
+        guess(char) {
+            if (this.status !== 'playing') return;
+            char = char.toUpperCase();
+            
+            if (this.guessedLetters.includes(char) || this.initialRevealed.includes(char)) {
+                return;
+            }
+
+            this.guessedLetters.push(char);
+
+            if (!this.word.includes(char)) {
+                this.wrongAttempts++;
+                if (this.wrongAttempts >= this.maxAttempts) {
+                    this.status = 'lost';
+                    this.lives--;
+                }
+            } else {
+                this.checkWin();
+            }
+        },
+
+        checkWin() {
+            let won = true;
+            for (let i = 0; i < this.word.length; i++) {
+                let char = this.word[i];
+                if (!this.guessedLetters.includes(char) && !this.initialRevealed.includes(char)) {
+                    won = false;
+                    break;
+                }
+            }
+            if (won) {
+                this.status = 'won';
+                this.score += 50; // Bonus score for winning
+            }
+        },
+
+        handleKeydown(e) {
+            if (this.status !== 'playing') {
+                if (e.key === 'Enter') {
+                    this.proceedToLevel();
+                }
+                return;
+            }
+            
+            const key = e.key.toUpperCase();
+            if (/^[A-Z]$/.test(key)) {
+                this.guess(key);
+            }
+        },
+
+        async proceedToLevel() {
+            await fetch('{% url "game:update_state" %}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token }}'
+                },
+                body: JSON.stringify({
+                    level: this.level + 1,
+                    score: this.score,
+                    lives: this.lives
+                })
+            });
+            window.location.replace('{% url "game:game" %}');
+        }
+    }));
+});
+</script>
+{% endblock %}

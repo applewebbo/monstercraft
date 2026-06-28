@@ -84,7 +84,7 @@
 
 {% block content %}
 <div class="game-wrapper" 
-     x-data="gameSetup({ size: {{ grid_size }}, level: {{ level }}, score: {{ score }}, mapData: {{ map_data_json|safe }} })"
+     x-data="gameSetup({ size: {{ grid_size }}, level: {{ level }}, score: {{ score }}, lives: {{ lives }}, mapData: {{ map_data_json|safe }} })"
      @keydown.window="handleKeydown($event)"
      style="display: flex; flex-direction: column; align-items: center; gap: 40px; margin-top: 20px; width: 100%; max-width: 1200px; margin-left: auto; margin-right: auto;">
 
@@ -148,7 +148,6 @@
     <div x-show="alertMessage !== ''" class="modal-overlay" style="display: none;" x-cloak>
         <div class="modal-content">
             <h2 x-show="alertType === 'pit'" style="color: #f44336;">Trappola!</h2>
-            <h2 x-show="alertType === 'exit'" style="color: #4CAF50;">Livello Completato!</h2>
             <h2 x-show="alertType === 'gameover'" style="color: #f44336;">GAME OVER</h2>
             <p class="question-text" x-text="alertMessage"></p>
             
@@ -159,10 +158,10 @@
                 <p>Inserisci le tue iniziali per la Leaderboard!</p>
                 <div style="display: flex; gap: 20px; justify-content: center; margin: 20px 0;">
                     <template x-for="(letter, index) in letters" :key="index">
-                        <div style="display: flex; flex-direction: column; align-items: center; gap: 10px;">
-                            <button type="button" @click="nextLetter(index)" class="btn-option" style="padding: 10px; font-size: 20px;">▲</button>
-                            <span x-text="letter" style="font-size: 36px; font-weight: bold; color: #FFEB3B; font-family: 'Press Start 2P', cursive;"></span>
-                            <button type="button" @click="prevLetter(index)" class="btn-option" style="padding: 10px; font-size: 20px;">▼</button>
+                        <div style="display: flex; flex-direction: column; align-items: center; gap: 10px;" @click="selectedLetterIndex = index">
+                            <button type="button" @click="nextLetter(index)" class="btn-option" :style="selectedLetterIndex === index ? 'background-color: #4CAF50; border-color: #FFEB3B;' : ''" style="padding: 10px; font-size: 20px;">▲</button>
+                            <span x-text="letter" :style="selectedLetterIndex === index ? 'text-decoration: underline; text-underline-offset: 8px;' : ''" style="font-size: 36px; font-weight: bold; color: #FFEB3B; font-family: 'Press Start 2P', cursive; cursor: pointer;"></span>
+                            <button type="button" @click="prevLetter(index)" class="btn-option" :style="selectedLetterIndex === index ? 'background-color: #4CAF50; border-color: #FFEB3B;' : ''" style="padding: 10px; font-size: 20px;">▼</button>
                         </div>
                     </template>
                 </div>
@@ -191,29 +190,34 @@ document.addEventListener('alpine:init', () => {
         level: config.level,
         score: config.score,
         mapData: config.mapData,
-        lives: 3,
+        lives: config.lives,
         playerX: 0,
         playerY: 0,
         isModalOpen: false,
         alertMessage: '',
         alertType: '',
         letters: ['A', 'A', 'A'],
+        selectedLetterIndex: 0,
+        allowedChars: "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!?.-*",
         
         nextLetter(i) {
-            let code = this.letters[i].charCodeAt(0);
-            code = code === 90 ? 65 : code + 1;
-            this.letters[i] = String.fromCharCode(code);
+            let idx = this.allowedChars.indexOf(this.letters[i]);
+            idx = (idx + 1) % this.allowedChars.length;
+            this.letters[i] = this.allowedChars[idx];
         },
         
         prevLetter(i) {
-            let code = this.letters[i].charCodeAt(0);
-            code = code === 65 ? 90 : code - 1;
-            this.letters[i] = String.fromCharCode(code);
+            let idx = this.allowedChars.indexOf(this.letters[i]);
+            idx = (idx - 1 + this.allowedChars.length) % this.allowedChars.length;
+            this.letters[i] = this.allowedChars[idx];
         },
         
         init() {
             this.playerX = 0;
             this.playerY = 0;
+            if (this.lives <= 0) {
+                this.showAlert("Hai perso una vita nell'Enigma e le hai esaurite! Game Over.", "gameover");
+            }
         },
 
         isPlayer(x, y) {
@@ -226,15 +230,28 @@ document.addEventListener('alpine:init', () => {
             this.isModalOpen = true;
         },
 
-        closeAlert() {
+        async closeAlert() {
             this.alertMessage = '';
             this.isModalOpen = false;
-            
-            if (this.alertType === 'exit') {
-                window.location.href = `/game/?level=${this.level + 1}&score=${this.score}`;
-            }
             // in caso di gameover, non facciamo nulla perché gestisce tutto il form "SALVA PUNTEGGIO"
             this.alertType = '';
+        },
+
+        async proceedToEnigma() {
+            this.isModalOpen = true; // Blocca input mentre transiziona
+            await fetch('{% url "game:update_state" %}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token }}'
+                },
+                body: JSON.stringify({
+                    level: this.level,
+                    score: this.score,
+                    lives: this.lives
+                })
+            });
+            window.location.replace('{% url "game:hangman" %}');
         },
 
         handleKeydown(e) {
@@ -242,6 +259,20 @@ document.addEventListener('alpine:init', () => {
                 if(["ArrowUp","ArrowDown","ArrowLeft","ArrowRight", " "].indexOf(e.key) > -1) {
                     e.preventDefault();
                 }
+                
+                if (this.alertType === 'gameover') {
+                    if (e.key === 'ArrowLeft') {
+                        this.selectedLetterIndex = (this.selectedLetterIndex - 1 + this.letters.length) % this.letters.length;
+                    } else if (e.key === 'ArrowRight') {
+                        this.selectedLetterIndex = (this.selectedLetterIndex + 1) % this.letters.length;
+                    } else if (e.key === 'ArrowUp') {
+                        this.nextLetter(this.selectedLetterIndex);
+                    } else if (e.key === 'ArrowDown') {
+                        this.prevLetter(this.selectedLetterIndex);
+                    }
+                    return;
+                }
+                
                 // Se premo spazio o invio
                 if((e.key === ' ' || e.key === 'Enter')) {
                     // Chiudi l'alert veloce (Trappola/Fine Livello)
@@ -300,7 +331,7 @@ document.addEventListener('alpine:init', () => {
                 } else if (targetCell === 4) {
                     this.playerX = newX;
                     this.playerY = newY;
-                    this.showAlert("Hai raggiunto l'uscita! Preparati al prossimo livello...", "exit");
+                    this.proceedToEnigma();
                 } else {
                     // Cella vuota
                     this.playerX = newX;

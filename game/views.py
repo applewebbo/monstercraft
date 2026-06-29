@@ -12,7 +12,9 @@ def start(request):
         request.session['level'] = 1
         request.session['score'] = 0
         request.session['lives'] = 3
+        request.session['monster_helps'] = 0
         request.session['asked_questions'] = []
+        request.session['asked_words'] = []
         request.session['age_group'] = request.POST.get('age_group', '9-12')
         request.session.modified = True
         return redirect('game:game')
@@ -26,6 +28,7 @@ def index(request):
     level = request.session.get('level', 1)
     score = request.session.get('score', 0)
     lives = request.session.get('lives', 3)
+    monster_helps = request.session.get('monster_helps', 0)
     
     # Calculate grid size based on level
     grid_size = min(5 + (level - 1) * 2, 25)
@@ -102,7 +105,7 @@ def index(request):
                     for dx, dy in [(0, 1), (0, -1), (1, 0), (-1, 0)]:
                         nx, ny = cx + dx, cy + dy
                         if 0 <= nx < grid_size and 0 <= ny < grid_size and (nx, ny) not in visited:
-                            if grid[ny][nx] in [0, 2, 4, 5]:
+                            if grid[ny][nx] in [0, 2, 4, 5, 7, 8]:
                                 visited.add((nx, ny))
                                 queue.append((nx, ny))
                 return False
@@ -121,11 +124,20 @@ def index(request):
                 else:
                     # Rimuovi la trappola perché blocca l'unica strada
                     grid[py][px] = 0
+                    
+    # 3. Add hidden rewards (from level 3)
+    if level >= 3 and len(path_cells) > 0:
+        # 1 reward per dungeon (if available path cells)
+        reward_type = random.choices([7, 8], weights=[1, 2], k=1)[0]
+        rx, ry = random.choice(path_cells)
+        grid[ry][rx] = reward_type
+        path_cells.remove((rx, ry))
     
     context = {
         'level': level,
         'score': score,
         'lives': lives,
+        'monster_helps': monster_helps,
         'grid_size': grid_size,
         'map_data_json': json.dumps(grid),
     }
@@ -167,11 +179,25 @@ def get_question(request):
     y = request.GET.get('y', '')
     score = request.GET.get('score', 0)
     
+    try:
+        monster_helps = int(request.GET.get('monster_helps', request.session.get('monster_helps', 0)))
+    except ValueError:
+        monster_helps = 0
+    
+    eliminate_options = []
+    if question:
+        wrong_options = [i for i in range(1, 5) if i != question.correct_option]
+        if not question.option_4 and 4 in wrong_options:
+            wrong_options.remove(4)
+        eliminate_options = random.sample(wrong_options, min(2, len(wrong_options)))
+    
     context = {
         'question': question,
         'x': x,
         'y': y,
         'score': score,
+        'monster_helps': monster_helps,
+        'eliminate_options': eliminate_options,
     }
     return render(request, 'game/partials/question_modal.html', context)
 
@@ -213,12 +239,18 @@ def save_score(request):
             score = 0
             level = 1
             
-        Score.objects.create(initials=initials, score=score, level=level)
+        age_group = request.session.get('age_group')
+        Score.objects.create(initials=initials, score=score, level=level, age_group=age_group)
+        
+        # Keep only the top 30 scores
+        top_scores_ids = list(Score.objects.order_by('-score', '-level', '-id').values_list('id', flat=True)[:30])
+        Score.objects.exclude(id__in=top_scores_ids).delete()
+        
         return redirect('game:leaderboard')
     return HttpResponseBadRequest("Invalid method")
 
 def leaderboard(request):
-    scores = Score.objects.all().order_by('-score', '-level')[:10]
+    scores = Score.objects.all().order_by('-score', '-level')[:30]
     return render(request, 'game/leaderboard.html', {'scores': scores})
 
 def hangman(request):
@@ -247,20 +279,35 @@ def hangman(request):
         max_attempts = 3
         
     age_group = request.session.get('age_group', '9-12')
-    word_obj = HangmanWord.objects.filter(age_group=age_group, difficulty=difficulty).order_by('?').first()
+    asked_words = request.session.get('asked_words', [])
+    
+    word_obj = HangmanWord.objects.filter(age_group=age_group, difficulty=difficulty).exclude(id__in=asked_words).order_by('?').first()
     
     if not word_obj:
-        word_obj = HangmanWord.objects.filter(age_group=age_group).order_by('?').first()
+        word_obj = HangmanWord.objects.filter(age_group=age_group).exclude(id__in=asked_words).order_by('?').first()
         
     if not word_obj:
-        word_obj = HangmanWord.objects.order_by('?').first()
+        word_obj = HangmanWord.objects.exclude(id__in=asked_words).order_by('?').first()
         
+    # Se finite tutte le parole, resetta l'elenco e ripesca
+    if not word_obj:
+        asked_words = []
+        word_obj = HangmanWord.objects.filter(age_group=age_group).order_by('?').first()
+        if not word_obj:
+            word_obj = HangmanWord.objects.order_by('?').first()
+            
     # Se proprio non ci sono parole nel DB, ne usiamo una di default
     if not word_obj:
         class DefaultWord:
+            id = 0
             word = "MONSTER"
             hint = "Una creatura spaventosa"
         word_obj = DefaultWord()
+        
+    if getattr(word_obj, 'id', 0) != 0:
+        asked_words.append(word_obj.id)
+        request.session['asked_words'] = asked_words
+        request.session.modified = True
         
     word = word_obj.word.upper()
     
@@ -290,6 +337,7 @@ def update_state(request):
             request.session['level'] = data.get('level', request.session.get('level', 1))
             request.session['score'] = data.get('score', request.session.get('score', 0))
             request.session['lives'] = data.get('lives', request.session.get('lives', 3))
+            request.session['monster_helps'] = data.get('monster_helps', request.session.get('monster_helps', 0))
             request.session.modified = True
             return JsonResponse({'status': 'ok'})
         except Exception:

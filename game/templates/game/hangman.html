@@ -9,26 +9,28 @@
         display: flex;
         flex-direction: column;
         align-items: center;
-        gap: 30px;
-        margin-top: 50px;
+        justify-content: center;
+        gap: 2vh;
+        height: 100%;
         font-family: 'Press Start 2P', cursive;
-        padding: 40px;
+        padding: 2vh;
+        box-sizing: border-box;
     }
 
     .word-display {
         display: flex;
-        gap: 15px;
-        margin: 20px 0;
+        gap: clamp(5px, 1.5vw, 15px);
+        margin: 1vh 0;
     }
 
     .letter-box {
-        width: 40px;
-        height: 50px;
+        width: clamp(20px, 4vw, 40px);
+        height: clamp(30px, 6vh, 50px);
         border-bottom: 4px solid #fff;
         display: flex;
         justify-content: center;
         align-items: flex-end;
-        font-size: 32px;
+        font-size: clamp(16px, 4vh, 32px);
         color: #ffeb3b;
         padding-bottom: 5px;
         text-shadow: 2px 2px 0 #000;
@@ -37,20 +39,20 @@
     .keyboard {
         display: flex;
         flex-wrap: wrap;
-        gap: 10px;
+        gap: clamp(4px, 1vw, 10px);
         justify-content: center;
         max-width: 600px;
-        margin-top: 20px;
+        margin-top: 1vh;
     }
 
     .key-btn {
-        width: 45px;
-        height: 45px;
+        width: clamp(30px, 6vw, 45px);
+        height: clamp(30px, 6vw, 45px);
         background-color: #222;
         border: 2px solid #fff;
         color: #fff;
         font-family: 'Press Start 2P', cursive;
-        font-size: 16px;
+        font-size: clamp(10px, 2vh, 16px);
         cursor: pointer;
         transition: all 0.2s;
     }
@@ -77,11 +79,11 @@
 
     .status-panel {
         background: #222;
-        padding: 20px;
+        padding: 2vh;
         border: 4px solid #fff;
         border-radius: 8px;
         text-align: center;
-        box-shadow: 8px 8px 0px #555;
+        box-shadow: 4px 4px 0px #555;
         width: 100%;
         max-width: 600px;
     }
@@ -96,6 +98,11 @@
         color: #03a9f4;
         margin-bottom: 20px;
         line-height: 1.5;
+    }
+    @keyframes pulse {
+        0% { transform: scale(1); opacity: 1; }
+        50% { transform: scale(1.05); opacity: 0.8; }
+        100% { transform: scale(1); opacity: 1; }
     }
 </style>
 {% endblock %}
@@ -183,7 +190,7 @@
      x-data="hangmanGame(JSON.parse(document.getElementById('hangman-config').textContent))"
      @keydown.window="handleKeydown($event)">
 
-    <img src="{% static 'game/images/gatekeeper.jpg' %}" alt="Guardiano del Portale" style="width: 160px; height: 160px; border-radius: 8px; border: 4px solid #fff; box-shadow: 6px 6px 0px #03a9f4; margin-bottom: -10px; image-rendering: pixelated;">
+    <img src="{% static 'game/images/gatekeeper.jpg' %}" alt="Guardiano del Portale" style="max-height: 15vh; max-width: 15vh; aspect-ratio: 1; border-radius: 8px; border: 4px solid #fff; box-shadow: 4px 4px 0px #03a9f4; image-rendering: pixelated;">
     <h2 style="color: #4CAF50; text-shadow: 2px 2px 0 #000; text-align: center;">ENIGMA DEL PORTALE</h2>
 
     <div class="status-panel">
@@ -222,6 +229,8 @@
         <h2 x-show="status === 'won'" style="color: #4CAF50;">PORTALE APERTO! (+50 pt)</h2>
         <h2 x-show="status === 'lost'" style="color: #f44336;">PORTALE FORZATO... (-1 VITA)</h2>
         <p x-show="status === 'lost'">La parola era: <strong x-text="word" style="color: #FFEB3B;"></strong></p>
+        
+        <h3 x-show="level % 2 === 0" style="color: #FFEB3B; margin-top: 15px; animation: pulse 1.5s infinite;">⭐ +1 VITA BONUS (Dungeon Completati) ⭐</h3>
         
         <button type="button" @click="proceedToLevel()" class="btn-option" style="margin-top: 20px; background-color: #03a9f4;">
             ENTRA NEL LIVELLO <span x-text="level + 1"></span>
@@ -300,6 +309,10 @@ document.addEventListener('alpine:init', () => {
         },
 
         async proceedToLevel() {
+            let finalLives = this.lives;
+            if (this.level % 2 === 0) {
+                finalLives++;
+            }
             await fetch('{% url "game:update_state" %}', {
                 method: 'POST',
                 headers: {
@@ -309,7 +322,7 @@ document.addEventListener('alpine:init', () => {
                 body: JSON.stringify({
                     level: this.level + 1,
                     score: this.score,
-                    lives: this.lives
+                    lives: finalLives
                 })
             });
             window.location.replace('{% url "game:game" %}');

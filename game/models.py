@@ -51,6 +51,7 @@ class Score(models.Model):
     initials = models.CharField(max_length=3, verbose_name="Iniziali")
     score = models.IntegerField(verbose_name="Punteggio")
     level = models.IntegerField(verbose_name="Livello Raggiunto")
+    age_group = models.CharField(max_length=10, choices=Question.AGE_GROUP_CHOICES, blank=True, null=True, verbose_name="Fascia d'età")
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:

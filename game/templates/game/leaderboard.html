@@ -15,7 +15,7 @@
         box-shadow: 8px 8px 0px #555;
     }
     .leaderboard-table th, .leaderboard-table td {
-        padding: 15px;
+        padding: clamp(5px, 1.5vh, 15px);
         border-bottom: 2px solid #444;
         text-align: center;
         font-family: 'Press Start 2P', cursive;
@@ -35,14 +35,16 @@
 {% endblock %}
 
 {% block content %}
-<div style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 80vh; text-align: center; gap: 30px; margin-top: 50px;">
-    <img src="{% static 'game/images/leaderboard_logo.jpg' %}" alt="Leaderboard" style="width: 100%; max-width: 600px; border-radius: 10px; margin-bottom: 10px;">
+<div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; text-align: center; gap: 2vh; box-sizing: border-box;">
+    <img src="{% static 'game/images/leaderboard_logo.jpg' %}" alt="Leaderboard" style="width: 100%; max-width: 600px; max-height: 20vh; object-fit: contain; border-radius: 10px;">
     
-    <table class="leaderboard-table">
-        <thead>
-            <tr>
+    <div style="flex-grow: 1; overflow-y: auto; width: 100%; max-width: 600px; border: 4px solid #fff; border-radius: 8px; box-shadow: 4px 4px 0px #555; margin: 1vh 0; background: #222;">
+        <table class="leaderboard-table" style="border: none; box-shadow: none; width: 100%; margin: 0;">
+            <thead style="position: sticky; top: 0; background: #222; z-index: 10;">
+                <tr>
                 <th>Pos</th>
                 <th>Nome</th>
+                <th>Età</th>
                 <th>Punti</th>
                 <th>Lv</th>
             </tr>
@@ -52,18 +54,20 @@
             <tr>
                 <td class="rank">#{{ forloop.counter }}</td>
                 <td style="color: #03A9F4; font-size: 1.2rem;">{{ entry.initials }}</td>
+                <td style="color: #9C27B0;">{{ entry.get_age_group_display|default_if_none:"" }}</td>
                 <td style="color: #FFEB3B;">{{ entry.score }}</td>
                 <td style="color: #f44336;">{{ entry.level }}</td>
             </tr>
             {% empty %}
             <tr>
-                <td colspan="4">Nessun punteggio ancora. Diventa il primo!</td>
+                <td colspan="5">Nessun punteggio ancora. Diventa il primo!</td>
             </tr>
             {% endfor %}
         </tbody>
-    </table>
+        </table>
+    </div>
 
-    <a href="{% url 'game:start' %}" class="btn-option" style="text-decoration: none; font-size: 1.2rem; padding: 15px 30px; display: inline-block;">
+    <a href="{% url 'game:start' %}" class="btn-option" style="text-decoration: none; font-size: clamp(1rem, 2.5vh, 1.2rem); padding: 2vh 4vw; display: inline-block; background-color: #f44336; border-color: #ff9800; text-shadow: 2px 2px 0 #000;">
         🏠 MENU PRINCIPALE
     </a>
 </div>

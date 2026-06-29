@@ -56,10 +56,10 @@
     }
     
     /* Responsive cell sizes */
-    .grid[data-size="5"] .cell { width: 50px; height: 50px; font-size: 30px; }
-    .grid[data-size="7"] .cell { width: 45px; height: 45px; font-size: 26px; }
-    .grid[data-size="9"] .cell { width: 40px; height: 40px; font-size: 24px; }
-    .grid[data-size="25"] .cell { width: 20px; height: 20px; font-size: 14px; }
+    .grid[data-size="5"] .cell { width: min(8vh, 50px); height: min(8vh, 50px); font-size: min(5vh, 30px); }
+    .grid[data-size="7"] .cell { width: min(6vh, 45px); height: min(6vh, 45px); font-size: min(4vh, 26px); }
+    .grid[data-size="9"] .cell { width: min(5vh, 40px); height: min(5vh, 40px); font-size: min(3vh, 24px); }
+    .grid[data-size="25"] .cell { width: min(2vh, 18px); height: min(2vh, 18px); font-size: min(1.5vh, 12px); }
 
     .player { background-color: #4CAF50; }
     .wall { background-color: #555; border: 1px solid #444; }
@@ -84,15 +84,15 @@
 
 {% block content %}
 <div class="game-wrapper" 
-     x-data="gameSetup({ size: {{ grid_size }}, level: {{ level }}, score: {{ score }}, lives: {{ lives }}, mapData: {{ map_data_json|safe }} })"
+     x-data="gameSetup({ size: {{ grid_size }}, level: {{ level }}, score: {{ score }}, lives: {{ lives }}, monsterHelps: {{ monster_helps }}, mapData: {{ map_data_json|safe }} })"
      @keydown.window="handleKeydown($event)"
-     style="display: flex; flex-direction: column; align-items: center; gap: 40px; margin-top: 20px; width: 100%; max-width: 1200px; margin-left: auto; margin-right: auto;">
+     style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2vh; height: 100%; width: 100%; max-width: 1200px; margin: 0 auto; box-sizing: border-box;">
 
     <!-- Logo / Title -->
-    <img src="{% static 'game/images/logo.jpg' %}" alt="MonsterCraft Logo" style="width: 320px;">
+    <img src="{% static 'game/images/logo.jpg' %}" alt="MonsterCraft Logo" style="max-width: 320px; max-height: 12vh; object-fit: contain;">
 
     <!-- Game Board -->
-    <div class="game-container" style="display: flex; flex-direction: column; align-items: center;">
+    <div class="game-container" style="display: flex; flex-direction: column; align-items: center; gap: 1vh;">
 
         <div class="grid-wrapper">
             <div class="grid" :data-size="size" :style="`grid-template-columns: repeat(${size}, 1fr);`">
@@ -118,28 +118,33 @@
     </div>
 
     <!-- Sidebar (ora in basso) -->
-    <div class="sidebar" style="background: #222; border: 4px solid #fff; padding: 25px 50px; width: 100%; max-width: 800px; box-shadow: 8px 8px 0px #555; border-radius: 8px;">
+    <div class="sidebar" style="background: #222; border: 4px solid #fff; padding: 2vh 4vw; width: 100%; max-width: 800px; box-shadow: 4px 4px 0px #555; border-radius: 8px;">
         <div style="display: flex; justify-content: space-between; align-items: center; font-family: 'Press Start 2P', cursive; text-transform: uppercase;">
-            <div style="display: flex; flex-direction: column; align-items: center; gap: 15px;">
-                <span style="color: #4CAF50; font-size: 1rem;">Livello</span>
-                <span x-text="level" style="color: #FFEB3B; font-size: 2rem; text-shadow: 3px 3px 0 #000;"></span>
+            <div style="display: flex; flex-direction: row; align-items: center; gap: 1vw;" title="Livello">
+                <span style="font-size: clamp(1.2rem, 3vh, 2rem);">🗺️</span>
+                <span x-text="level" style="color: #FFEB3B; font-size: clamp(1.2rem, 3vh, 2rem); text-shadow: 2px 2px 0 #000;"></span>
             </div>
             
-            <div style="display: flex; flex-direction: column; align-items: center; gap: 15px;">
-                <span style="color: #4CAF50; font-size: 1rem;">Vite</span>
-                <span x-text="lives" style="color: #f44336; font-size: 2rem; text-shadow: 3px 3px 0 #000;"></span>
+            <div style="display: flex; flex-direction: row; align-items: center; gap: 1vw;" title="Vite">
+                <span style="font-size: clamp(1.2rem, 3vh, 2rem);">❤️</span>
+                <span x-text="lives" style="color: #f44336; font-size: clamp(1.2rem, 3vh, 2rem); text-shadow: 2px 2px 0 #000;"></span>
             </div>
             
-            <div style="display: flex; flex-direction: column; align-items: center; gap: 15px;">
-                <span style="color: #4CAF50; font-size: 1rem;">Punti</span>
-                <span x-text="score" style="color: #03A9F4; font-size: 2rem; text-shadow: 3px 3px 0 #000;"></span>
+            <div style="display: flex; flex-direction: row; align-items: center; gap: 1vw;" x-show="monsterHelps > 0" title="Aiuti">
+                <span style="font-size: clamp(1.2rem, 3vh, 2rem);">📜</span>
+                <span x-text="monsterHelps" style="color: #9C27B0; font-size: clamp(1.2rem, 3vh, 2rem); text-shadow: 2px 2px 0 #000;"></span>
+            </div>
+            
+            <div style="display: flex; flex-direction: row; align-items: center; gap: 1vw;" title="Punti">
+                <span style="font-size: clamp(1.2rem, 3vh, 2rem);">💎</span>
+                <span x-text="score" style="color: #03A9F4; font-size: clamp(1.2rem, 3vh, 2rem); text-shadow: 2px 2px 0 #000;"></span>
             </div>
         </div>
     </div>
     
     <!-- Bottone Restart -->
-    <div style="margin-top: 10px;">
-        <a href="{% url 'game:start' %}" class="btn-option" style="text-decoration: none; display: inline-block; font-size: 1rem; background-color: #f44336; border-color: #ff9800; text-shadow: 2px 2px 0 #000;">
+    <div>
+        <a href="{% url 'game:start' %}" class="btn-option" style="text-decoration: none; display: inline-block; font-size: clamp(0.8rem, 2vh, 1rem); padding: 1.5vh 3vw; background-color: #f44336; border-color: #ff9800; text-shadow: 2px 2px 0 #000;">
             🏠 MENU PRINCIPALE
         </a>
     </div>
@@ -148,6 +153,7 @@
     <div x-show="alertMessage !== ''" class="modal-overlay" style="display: none;" x-cloak>
         <div class="modal-content">
             <h2 x-show="alertType === 'pit'" style="color: #f44336;">Trappola!</h2>
+            <h2 x-show="alertType === 'reward'" style="color: #FFEB3B;">Tesoro Trovato!</h2>
             <h2 x-show="alertType === 'gameover'" style="color: #f44336;">GAME OVER</h2>
             <p class="question-text" x-text="alertMessage"></p>
             
@@ -191,6 +197,7 @@ document.addEventListener('alpine:init', () => {
         score: config.score,
         mapData: config.mapData,
         lives: config.lives,
+        monsterHelps: config.monsterHelps,
         playerX: 0,
         playerY: 0,
         isModalOpen: false,
@@ -248,7 +255,8 @@ document.addEventListener('alpine:init', () => {
                 body: JSON.stringify({
                     level: this.level,
                     score: this.score,
-                    lives: this.lives
+                    lives: this.lives,
+                    monster_helps: this.monsterHelps
                 })
             });
             window.location.replace('{% url "game:hangman" %}');
@@ -312,7 +320,7 @@ document.addEventListener('alpine:init', () => {
                 } else if (targetCell === 2) {
                     // Ferma il giocatore e apri la modale HTMX
                     this.isModalOpen = true;
-                    htmx.ajax('GET', `/question/?x=${newX}&y=${newY}&level=${this.level}`, {target: '#modal-container', swap: 'innerHTML'});
+                    htmx.ajax('GET', `/question/?x=${newX}&y=${newY}&level=${this.level}&monster_helps=${this.monsterHelps}`, {target: '#modal-container', swap: 'innerHTML'});
                 } else if (targetCell === 5) {
                     // Mostro già sconfitto, passiamo oltre liberamente
                     this.playerX = newX;
@@ -332,6 +340,18 @@ document.addEventListener('alpine:init', () => {
                     this.playerX = newX;
                     this.playerY = newY;
                     this.proceedToEnigma();
+                } else if (targetCell === 7) {
+                    this.lives++;
+                    this.mapData[newY][newX] = 0; // consumed
+                    this.playerX = newX;
+                    this.playerY = newY;
+                    this.showAlert("Hai trovato una pozione nascosta! +1 VITA!", "reward");
+                } else if (targetCell === 8) {
+                    this.monsterHelps++;
+                    this.mapData[newY][newX] = 0; // consumed
+                    this.playerX = newX;
+                    this.playerY = newY;
+                    this.showAlert("Hai trovato una pergamena magica! Usala contro un mostro per un aiuto.", "reward");
                 } else {
                     // Cella vuota
                     this.playerX = newX;
@@ -341,6 +361,17 @@ document.addEventListener('alpine:init', () => {
         }
     }));
 });
+
+// Esposta globalmente per consumare l'aiuto
+window.consumeMonsterHelp = function() {
+    let container = document.querySelector('.game-wrapper');
+    if (container) {
+        let game = Alpine.$data(container);
+        if (game.monsterHelps > 0) {
+            game.monsterHelps--;
+        }
+    }
+};
 
 // Funzione globale chiamata dai bottoni del result HTMX
 window.resolveEncounter = function(correct, x, y) {

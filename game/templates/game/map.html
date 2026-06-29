@@ -11,7 +11,7 @@
         align-items: center;
         gap: 20px;
     }
-    
+
     .stats {
         display: flex;
         gap: 30px;
@@ -54,7 +54,7 @@
         transition: background-color 0.1s;
         border-radius: 2px;
     }
-    
+
     /* Responsive cell sizes */
     .grid[data-size="5"] .cell { width: min(8vh, 50px); height: min(8vh, 50px); font-size: min(5vh, 30px); }
     .grid[data-size="7"] .cell { width: min(6vh, 45px); height: min(6vh, 45px); font-size: min(4vh, 26px); }
@@ -63,7 +63,7 @@
 
     .player { background-color: #4CAF50; }
     .wall { background-color: #555; border: 1px solid #444; }
-    
+
     /* Modale HTMX */
     .modal-overlay {
         position: fixed; top: 0; left: 0; width: 100%; height: 100%;
@@ -83,7 +83,7 @@
 {% endblock %}
 
 {% block content %}
-<div class="game-wrapper" 
+<div class="game-wrapper"
      x-data="gameSetup({ size: {{ grid_size }}, level: {{ level }}, score: {{ score }}, lives: {{ lives }}, monsterHelps: {{ monster_helps }}, mapData: {{ map_data_json|safe }} })"
      @keydown.window="handleKeydown($event)"
      style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2vh; height: 100%; width: 100%; max-width: 1200px; margin: 0 auto; box-sizing: border-box;">
@@ -98,14 +98,14 @@
             <div class="grid" :data-size="size" :style="`grid-template-columns: repeat(${size}, 1fr);`">
                 <template x-for="y in size" :key="'row-'+y">
                     <template x-for="x in size" :key="'col-'+x">
-                        <div class="cell" 
+                        <div class="cell"
                          :class="{
                             'player': isPlayer(x-1, y-1),
                             'wall': !isPlayer(x-1, y-1) && mapData[y-1][x-1] === 1
                          }">
                         <!-- Il Giocatore -->
                         <span x-show="isPlayer(x-1, y-1)">👾</span>
-                        
+
                         <!-- Contenuti mappa -->
                         <span x-show="!isPlayer(x-1, y-1) && mapData[y-1][x-1] === 2">👹</span>
                         <span x-show="!isPlayer(x-1, y-1) && mapData[y-1][x-1] === 5" style="filter: hue-rotate(120deg);">👹</span>
@@ -124,41 +124,41 @@
                 <span style="font-size: clamp(1.2rem, 3vh, 2rem);">🗺️</span>
                 <span x-text="level" style="color: #FFEB3B; font-size: clamp(1.2rem, 3vh, 2rem); text-shadow: 2px 2px 0 #000;"></span>
             </div>
-            
+
             <div style="display: flex; flex-direction: row; align-items: center; gap: 1vw;" title="Vite">
                 <span style="font-size: clamp(1.2rem, 3vh, 2rem);">❤️</span>
                 <span x-text="lives" style="color: #f44336; font-size: clamp(1.2rem, 3vh, 2rem); text-shadow: 2px 2px 0 #000;"></span>
             </div>
-            
+
             <div style="display: flex; flex-direction: row; align-items: center; gap: 1vw;" x-show="monsterHelps > 0" title="Aiuti">
                 <span style="font-size: clamp(1.2rem, 3vh, 2rem);">📜</span>
                 <span x-text="monsterHelps" style="color: #9C27B0; font-size: clamp(1.2rem, 3vh, 2rem); text-shadow: 2px 2px 0 #000;"></span>
             </div>
-            
+
             <div style="display: flex; flex-direction: row; align-items: center; gap: 1vw;" title="Punti">
                 <span style="font-size: clamp(1.2rem, 3vh, 2rem);">💎</span>
                 <span x-text="score" style="color: #03A9F4; font-size: clamp(1.2rem, 3vh, 2rem); text-shadow: 2px 2px 0 #000;"></span>
             </div>
         </div>
     </div>
-    
+
     <!-- Bottone Restart -->
     <div>
         <a href="{% url 'game:start' %}" class="btn-option" style="text-decoration: none; display: inline-block; font-size: clamp(0.8rem, 2vh, 1rem); padding: 1.5vh 3vw; background-color: #f44336; border-color: #ff9800; text-shadow: 2px 2px 0 #000;">
             🏠 MENU PRINCIPALE
         </a>
     </div>
-    
-    
+
+
     <div x-show="alertMessage !== ''" class="modal-overlay" style="display: none;" x-cloak>
         <div class="modal-content">
             <h2 x-show="alertType === 'pit'" style="color: #f44336;">Trappola!</h2>
             <h2 x-show="alertType === 'reward'" style="color: #FFEB3B;">Tesoro Trovato!</h2>
             <h2 x-show="alertType === 'gameover'" style="color: #f44336;">GAME OVER</h2>
             <p class="question-text" x-text="alertMessage"></p>
-            
+
             <button x-show="alertType !== 'gameover'" @click="closeAlert()" class="btn-option">Continua (Invio)</button>
-            
+
             <!-- Arcade Input Form -->
             <div x-show="alertType === 'gameover'" style="margin-top: 20px;">
                 <p>Inserisci le tue iniziali per la Leaderboard!</p>
@@ -206,19 +206,19 @@ document.addEventListener('alpine:init', () => {
         letters: ['A', 'A', 'A'],
         selectedLetterIndex: 0,
         allowedChars: "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!?.-*",
-        
+
         nextLetter(i) {
             let idx = this.allowedChars.indexOf(this.letters[i]);
             idx = (idx + 1) % this.allowedChars.length;
             this.letters[i] = this.allowedChars[idx];
         },
-        
+
         prevLetter(i) {
             let idx = this.allowedChars.indexOf(this.letters[i]);
             idx = (idx - 1 + this.allowedChars.length) % this.allowedChars.length;
             this.letters[i] = this.allowedChars[idx];
         },
-        
+
         init() {
             this.playerX = 0;
             this.playerY = 0;
@@ -267,7 +267,7 @@ document.addEventListener('alpine:init', () => {
                 if(["ArrowUp","ArrowDown","ArrowLeft","ArrowRight", " "].indexOf(e.key) > -1) {
                     e.preventDefault();
                 }
-                
+
                 if (this.alertType === 'gameover') {
                     if (e.key === 'ArrowLeft') {
                         this.selectedLetterIndex = (this.selectedLetterIndex - 1 + this.letters.length) % this.letters.length;
@@ -280,7 +280,7 @@ document.addEventListener('alpine:init', () => {
                     }
                     return;
                 }
-                
+
                 // Se premo spazio o invio
                 if((e.key === ' ' || e.key === 'Enter')) {
                     // Chiudi l'alert veloce (Trappola/Fine Livello)
@@ -311,9 +311,9 @@ document.addEventListener('alpine:init', () => {
 
             // Controllo limiti della griglia
             if (newX >= 0 && newX < this.size && newY >= 0 && newY < this.size) {
-                
+
                 let targetCell = this.mapData[newY][newX];
-                
+
                 if (targetCell === 1) {
                     // Muro, non fare nulla
                     return;
@@ -330,7 +330,7 @@ document.addEventListener('alpine:init', () => {
                     this.mapData[newY][newX] = 6; // Pozzo scoperto
                     this.playerX = 0;
                     this.playerY = 0;
-                    
+
                     if (this.lives <= 0) {
                         this.showAlert("Hai esaurito le vite! Ricarica la pagina per riprovare.", "gameover");
                     } else {
@@ -378,7 +378,7 @@ window.resolveEncounter = function(correct, x, y) {
     let container = document.querySelector('.game-wrapper');
     // Alpine.js trick per accedere allo scope del componente
     let game = Alpine.$data(container);
-    
+
     if (correct) {
         game.mapData[y][x] = 5; // Sconfitto
         game.playerX = x;
@@ -391,7 +391,7 @@ window.resolveEncounter = function(correct, x, y) {
             game.showAlert("I mostri hanno avuto la meglio... Game Over!", "gameover");
         }
     }
-    
+
     // Chiudi la modale della domanda
     if (game.lives > 0) {
         game.isModalOpen = false;

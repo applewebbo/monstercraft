@@ -126,7 +126,7 @@
     const canvas = document.getElementById('hyperspace-canvas');
     const ctx = canvas.getContext('2d');
     let width, height;
-    
+
     function resize() {
         // Mantiene una risoluzione fissa e bassissima (stile DOS/8-bit) scalata poi dal CSS
         const ratio = window.innerWidth / window.innerHeight;
@@ -135,11 +135,11 @@
     }
     window.addEventListener('resize', resize);
     resize();
-    
+
     // Meno stelle per un look retrò più pulito
     const numStars = 150;
     const stars = [];
-    
+
     for (let i = 0; i < numStars; i++) {
         stars.push({
             x: Math.random() * 2000 - 1000,
@@ -148,35 +148,35 @@
             color: i % 4 === 0 ? '#03a9f4' : (i % 5 === 0 ? '#FFEB3B' : '#ffffff')
         });
     }
-    
+
     function draw() {
         // Nessun motion blur, nero solido
         ctx.fillStyle = '#000000';
         ctx.fillRect(0, 0, width, height);
-        
+
         const cx = width / 2;
         const cy = height / 2;
-        
+
         for (let i = 0; i < numStars; i++) {
             let star = stars[i];
             star.z -= 50; // Velocità warp aumentata
-            
+
             if (star.z <= 1) {
                 star.z = 2000;
                 star.x = Math.random() * 2000 - 1000;
                 star.y = Math.random() * 2000 - 1000;
             }
-            
+
             let x = Math.floor(cx + (star.x / star.z) * width);
             let y = Math.floor(cy + (star.y / star.z) * width);
-            
+
             // Dimensione "pixel" a scatti
             let size = Math.max(1, Math.floor((1 - star.z / 2000) * 3));
-            
+
             ctx.fillStyle = star.color;
             ctx.fillRect(x, y, size, size);
         }
-        
+
         // Ritardo per simulare basso framerate tipico 8-bit, ma più veloce (30 fps)
         setTimeout(() => {
             requestAnimationFrame(draw);
@@ -186,7 +186,7 @@
 })();
 </script>
 
-<div class="hangman-container" 
+<div class="hangman-container"
      x-data="hangmanGame(JSON.parse(document.getElementById('hangman-config').textContent))"
      @keydown.window="handleKeydown($event)">
 
@@ -195,7 +195,7 @@
 
     <div class="status-panel">
         <p class="hint" x-show="hint" x-text="hint"></p>
-        
+
         <div class="word-display" style="justify-content: center; flex-wrap: wrap;">
             <template x-for="(letter, index) in word.split('')" :key="index">
                 <div class="letter-box">
@@ -212,7 +212,7 @@
     <!-- Keyboard -->
     <div class="keyboard" x-show="status === 'playing'">
         <template x-for="char in 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('')" :key="char">
-            <button class="key-btn" 
+            <button class="key-btn"
                     :class="{
                         'key-correct': guessedLetters.includes(char) && word.includes(char),
                         'key-wrong': guessedLetters.includes(char) && !word.includes(char)
@@ -229,9 +229,9 @@
         <h2 x-show="status === 'won'" style="color: #4CAF50;">PORTALE APERTO! (+50 pt)</h2>
         <h2 x-show="status === 'lost'" style="color: #f44336;">PORTALE FORZATO... (-1 VITA)</h2>
         <p x-show="status === 'lost'">La parola era: <strong x-text="word" style="color: #FFEB3B;"></strong></p>
-        
+
         <h3 x-show="level % 2 === 0" style="color: #FFEB3B; margin-top: 15px; animation: pulse 1.5s infinite;">⭐ +1 VITA BONUS (Dungeon Completati) ⭐</h3>
-        
+
         <button type="button" @click="proceedToLevel()" class="btn-option" style="margin-top: 20px; background-color: #03a9f4;">
             ENTRA NEL LIVELLO <span x-text="level + 1"></span>
         </button>
@@ -261,7 +261,7 @@ document.addEventListener('alpine:init', () => {
         guess(char) {
             if (this.status !== 'playing') return;
             char = char.toUpperCase();
-            
+
             if (this.guessedLetters.includes(char) || this.initialRevealed.includes(char)) {
                 return;
             }
@@ -301,7 +301,7 @@ document.addEventListener('alpine:init', () => {
                 }
                 return;
             }
-            
+
             const key = e.key.toUpperCase();
             if (/^[A-Z]$/.test(key)) {
                 this.guess(key);

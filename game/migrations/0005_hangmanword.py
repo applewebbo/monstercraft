@@ -4,23 +4,42 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('game', '0004_score'),
+        ("game", "0004_score"),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='HangmanWord',
+            name="HangmanWord",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('word', models.CharField(max_length=50, verbose_name='Parola')),
-                ('hint', models.CharField(blank=True, max_length=100, null=True, verbose_name='Indizio')),
-                ('difficulty', models.IntegerField(choices=[(1, 'Facile'), (2, 'Medio'), (3, 'Difficile')], default=1, verbose_name='Difficoltà')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("word", models.CharField(max_length=50, verbose_name="Parola")),
+                (
+                    "hint",
+                    models.CharField(
+                        blank=True, max_length=100, null=True, verbose_name="Indizio"
+                    ),
+                ),
+                (
+                    "difficulty",
+                    models.IntegerField(
+                        choices=[(1, "Facile"), (2, "Medio"), (3, "Difficile")],
+                        default=1,
+                        verbose_name="Difficoltà",
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'Parola Impiccato',
-                'verbose_name_plural': 'Parole Impiccato',
+                "verbose_name": "Parola Impiccato",
+                "verbose_name_plural": "Parole Impiccato",
             },
         ),
     ]

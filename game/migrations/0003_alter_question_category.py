@@ -4,15 +4,26 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('game', '0002_question_difficulty_alter_question_category'),
+        ("game", "0002_question_difficulty_alter_question_category"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='question',
-            name='category',
-            field=models.CharField(choices=[('MATH', 'Matematica'), ('GEO', 'Geografia'), ('ENG', 'Inglese'), ('CHEM', 'Chimica'), ('SCI', 'Scienze'), ('ITA', 'Italiano'), ('HIST', 'Storia')], default='MATH', max_length=10),
+            model_name="question",
+            name="category",
+            field=models.CharField(
+                choices=[
+                    ("MATH", "Matematica"),
+                    ("GEO", "Geografia"),
+                    ("ENG", "Inglese"),
+                    ("CHEM", "Chimica"),
+                    ("SCI", "Scienze"),
+                    ("ITA", "Italiano"),
+                    ("HIST", "Storia"),
+                ],
+                default="MATH",
+                max_length=10,
+            ),
         ),
     ]

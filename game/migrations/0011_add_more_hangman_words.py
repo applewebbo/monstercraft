@@ -4,7 +4,7 @@ from django.db import migrations
 
 
 def add_words(apps, schema_editor):
-    HangmanWord = apps.get_model('game', 'HangmanWord')
+    HangmanWord = apps.get_model("game", "HangmanWord")
     words = [
         # 5-8
         ("GATTO", "Animale che fa miao", 1, "5-8"),
@@ -17,7 +17,6 @@ def add_words(apps, schema_editor):
         ("GIOCO", "Ci si diverte molto", 3, "5-8"),
         ("COLORI", "Ci sono nell'astuccio", 3, "5-8"),
         ("FAVOLA", "Storia prima di dormire", 3, "5-8"),
-        
         # 9-12
         ("LIBRO", "Ha tante pagine scritte", 1, "9-12"),
         ("SPORT", "Fa bene alla salute", 1, "9-12"),
@@ -29,7 +28,6 @@ def add_words(apps, schema_editor):
         ("RISPETTO", "Si deve a tutte le persone", 3, "9-12"),
         ("TALENTO", "Essere molto bravi in qualcosa", 3, "9-12"),
         ("PROGETTO", "Un'idea da realizzare", 3, "9-12"),
-        
         # 13-17
         ("STUDIO", "Impegno sui libri", 1, "13-17"),
         ("SOCIETA", "Insieme di persone", 1, "13-17"),
@@ -40,7 +38,6 @@ def add_words(apps, schema_editor):
         ("TEOREMA", "Va dimostrato in matematica", 3, "13-17"),
         ("GENETICA", "Studia il DNA", 3, "13-17"),
         ("FILOSOFIA", "L'amore per la saggezza", 3, "13-17"),
-        
         # ADULT
         ("LAVORO", "Occupa gran parte della giornata", 1, "ADULT"),
         ("TASSE", "Si pagano allo stato", 1, "ADULT"),
@@ -56,10 +53,10 @@ def add_words(apps, schema_editor):
     for word, hint, diff, age in words:
         HangmanWord.objects.create(word=word, hint=hint, difficulty=diff, age_group=age)
 
-class Migration(migrations.Migration):
 
+class Migration(migrations.Migration):
     dependencies = [
-        ('game', '0010_score_age_group'),
+        ("game", "0010_score_age_group"),
     ]
 
     operations = [

@@ -20,3 +20,11 @@ createsuperuser:
 # Run tests
 test:
 	uv run pytest
+
+# Lint the codebase
+lint:
+	just _pre-commit run --all-files
+
+# Helper for pre-commit
+_pre-commit *args:
+	uvx prek {{ args }}

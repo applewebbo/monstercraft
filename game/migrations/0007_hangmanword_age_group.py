@@ -4,15 +4,24 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('game', '0006_question_age_group_alter_question_category'),
+        ("game", "0006_question_age_group_alter_question_category"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='hangmanword',
-            name='age_group',
-            field=models.CharField(choices=[('5-8', '5-8 anni'), ('9-12', '9-12 anni'), ('13-17', '13-17 anni'), ('ADULT', 'Adulto')], default='9-12', max_length=10, verbose_name="Fascia d'età"),
+            model_name="hangmanword",
+            name="age_group",
+            field=models.CharField(
+                choices=[
+                    ("5-8", "5-8 anni"),
+                    ("9-12", "9-12 anni"),
+                    ("13-17", "13-17 anni"),
+                    ("ADULT", "Adulto"),
+                ],
+                default="9-12",
+                max_length=10,
+                verbose_name="Fascia d'età",
+            ),
         ),
     ]

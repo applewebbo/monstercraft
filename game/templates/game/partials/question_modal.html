@@ -4,8 +4,8 @@
     }
 </style>
 <div class="modal-overlay" id="question-modal-container"
-     x-data="{ 
-         selectedIndex: 0, 
+     x-data="{
+         selectedIndex: 0,
          maxIndex: {% if monster_helps > 0 %}{% if question.option_4 %}4{% else %}3{% endif %}{% else %}{% if question.option_4 %}3{% else %}2{% endif %}{% endif %},
          usedHelp: false,
          handleKeydown(e) {
@@ -32,7 +32,7 @@
             <input type="hidden" name="question_id" value="{{ question.id }}">
             <input type="hidden" name="x" value="{{ x }}">
             <input type="hidden" name="y" value="{{ y }}">
-            
+
             <div class="options" style="pointer-events: none;">
                 <button x-show="!usedHelp || !{{ eliminate_options|safe }}.includes(1)" type="submit" name="answer" value="1" class="btn-option" :class="{'selected': selectedIndex === 0}">{{ question.option_1 }}</button>
                 <button x-show="!usedHelp || !{{ eliminate_options|safe }}.includes(2)" type="submit" name="answer" value="2" class="btn-option" :class="{'selected': selectedIndex === 1}">{{ question.option_2 }}</button>
@@ -40,7 +40,7 @@
                 {% if question.option_4 %}
                 <button x-show="!usedHelp || !{{ eliminate_options|safe }}.includes(4)" type="submit" name="answer" value="4" class="btn-option" :class="{'selected': selectedIndex === 3}">{{ question.option_4 }}</button>
                 {% endif %}
-                
+
                 {% if monster_helps > 0 %}
                 <div style="margin-top: 15px; text-align: center;" x-show="!usedHelp">
                     <button type="button" class="btn-option" :class="{'selected': selectedIndex === (maxIndex)}" style="background-color: #9C27B0; border-color: #6A1B9A; font-size: 0.9rem; padding: 1vh 2vw;" @click="usedHelp = true; window.consumeMonsterHelp(); maxIndex -= 3; selectedIndex = 0;">

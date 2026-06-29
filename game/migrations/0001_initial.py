@@ -4,28 +4,69 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     initial = True
 
-    dependencies = [
-    ]
+    dependencies = []
 
     operations = [
         migrations.CreateModel(
-            name='Question',
+            name="Question",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('text', models.CharField(max_length=255, verbose_name='Testo della domanda')),
-                ('category', models.CharField(choices=[('MATH', 'Matematica'), ('GEO', 'Geografia'), ('HIST', 'Storia')], default='MATH', max_length=10)),
-                ('option_1', models.CharField(max_length=100, verbose_name='Opzione 1')),
-                ('option_2', models.CharField(max_length=100, verbose_name='Opzione 2')),
-                ('option_3', models.CharField(max_length=100, verbose_name='Opzione 3')),
-                ('option_4', models.CharField(blank=True, max_length=100, null=True, verbose_name='Opzione 4')),
-                ('correct_option', models.IntegerField(help_text="Inserisci il numero dell'opzione corretta (1, 2, 3 o 4)")),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "text",
+                    models.CharField(
+                        max_length=255, verbose_name="Testo della domanda"
+                    ),
+                ),
+                (
+                    "category",
+                    models.CharField(
+                        choices=[
+                            ("MATH", "Matematica"),
+                            ("GEO", "Geografia"),
+                            ("HIST", "Storia"),
+                        ],
+                        default="MATH",
+                        max_length=10,
+                    ),
+                ),
+                (
+                    "option_1",
+                    models.CharField(max_length=100, verbose_name="Opzione 1"),
+                ),
+                (
+                    "option_2",
+                    models.CharField(max_length=100, verbose_name="Opzione 2"),
+                ),
+                (
+                    "option_3",
+                    models.CharField(max_length=100, verbose_name="Opzione 3"),
+                ),
+                (
+                    "option_4",
+                    models.CharField(
+                        blank=True, max_length=100, null=True, verbose_name="Opzione 4"
+                    ),
+                ),
+                (
+                    "correct_option",
+                    models.IntegerField(
+                        help_text="Inserisci il numero dell'opzione corretta (1, 2, 3 o 4)"
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'Domanda',
-                'verbose_name_plural': 'Domande',
+                "verbose_name": "Domanda",
+                "verbose_name_plural": "Domande",
             },
         ),
     ]

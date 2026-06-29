@@ -1,7 +1,8 @@
 import os
+
 import django
 
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings')
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings")
 django.setup()
 
 from game.models import HangmanWord
@@ -20,7 +21,6 @@ words = [
     ("SORRISO", "Si fa quando si è felici", 3, "5-8"),
     ("PALLONCINO", "Si gonfia alle feste", 3, "5-8"),
     ("ARCOBALENO", "I sette colori dopo la pioggia", 3, "5-8"),
-    
     # 9-12 ANNI
     ("ALBERO", "Ha foglie e tronco", 1, "9-12"),
     ("SCUOLA", "Dove si va per imparare", 1, "9-12"),
@@ -35,7 +35,6 @@ words = [
     ("SPETTACOLO", "Cose bellissime da guardare", 3, "9-12"),
     ("INVENZIONE", "Creare qualcosa che non esisteva", 3, "9-12"),
     ("CONOSCENZA", "Sapere tante cose nuove", 3, "9-12"),
-    
     # 13-17 ANNI
     ("INTERNET", "La rete globale", 1, "13-17"),
     ("COMPUTER", "Macchina per elaborare dati", 1, "13-17"),
@@ -49,7 +48,6 @@ words = [
     ("METABOLISMO", "Insieme delle reazioni chimiche nel corpo", 3, "13-17"),
     ("CRITTOGRAFIA", "Tecnica per nascondere messaggi", 3, "13-17"),
     ("ECOSISTEMA", "Ambiente e organismi che lo abitano", 3, "13-17"),
-    
     # ADULT
     ("ECONOMIA", "Scienza che studia produzione e consumo", 1, "ADULT"),
     ("POLITICA", "Arte del governare", 1, "ADULT"),
@@ -63,7 +61,7 @@ words = [
     ("MACROECONOMIA", "Studio del sistema economico globale", 3, "ADULT"),
     ("PSICANALISI", "Teoria fondata da Freud", 3, "ADULT"),
     ("GLOBALIZZAZIONE", "Mercato unico mondiale", 3, "ADULT"),
-    ("NEUROSCIENZE", "Studio del sistema nervoso", 3, "ADULT")
+    ("NEUROSCIENZE", "Studio del sistema nervoso", 3, "ADULT"),
 ]
 
 print("Cancellazione vecchie parole in corso...")

@@ -145,7 +145,7 @@
             x: Math.random() * 2000 - 1000,
             y: Math.random() * 2000 - 1000,
             z: Math.random() * 2000,
-            color: i % 4 === 0 ? '#03a9f4' : (i % 5 === 0 ? '#FFEB3B' : '#ffffff')
+            color: '#ffffff'
         });
     }
 
@@ -159,7 +159,7 @@
 
         for (let i = 0; i < numStars; i++) {
             let star = stars[i];
-            star.z -= 50; // Velocità warp aumentata
+            star.z -= 100; // Velocità warp super-veloce
 
             if (star.z <= 1) {
                 star.z = 2000;
@@ -177,10 +177,8 @@
             ctx.fillRect(x, y, size, size);
         }
 
-        // Ritardo per simulare basso framerate tipico 8-bit, ma più veloce (30 fps)
-        setTimeout(() => {
-            requestAnimationFrame(draw);
-        }, 1000 / 30);
+        // Animazione super fluida e veloce
+        requestAnimationFrame(draw);
     }
     draw();
 })();
@@ -229,8 +227,6 @@
         <h2 x-show="status === 'won'" style="color: #4CAF50;">PORTALE APERTO! (+50 pt)</h2>
         <h2 x-show="status === 'lost'" style="color: #f44336;">PORTALE FORZATO... (-1 VITA)</h2>
         <p x-show="status === 'lost'">La parola era: <strong x-text="word" style="color: #FFEB3B;"></strong></p>
-
-        <h3 x-show="level % 2 === 0" style="color: #FFEB3B; margin-top: 15px; animation: pulse 1.5s infinite;">⭐ +1 VITA BONUS (Dungeon Completati) ⭐</h3>
 
         <button type="button" @click="proceedToLevel()" class="btn-option" style="margin-top: 20px; background-color: #03a9f4;">
             ENTRA NEL LIVELLO <span x-text="level + 1"></span>
@@ -310,9 +306,6 @@ document.addEventListener('alpine:init', () => {
 
         async proceedToLevel() {
             let finalLives = this.lives;
-            if (this.level % 2 === 0) {
-                finalLives++;
-            }
             await fetch('{% url "game:update_state" %}', {
                 method: 'POST',
                 headers: {

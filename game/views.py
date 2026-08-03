@@ -19,6 +19,13 @@ def start(request):
         request.session["asked_questions"] = []
         request.session["asked_words"] = []
         request.session["age_group"] = request.POST.get("age_group", "9-12")
+        
+        # Clear saved map state
+        request.session.pop("saved_map", None)
+        request.session.pop("saved_player_x", None)
+        request.session.pop("saved_player_y", None)
+        request.session.pop("saved_map_level", None)
+        
         request.session.modified = True
         return redirect("game:game")
 
@@ -34,119 +41,129 @@ def index(request):
     lives = request.session.get("lives", 3)
     monster_helps = request.session.get("monster_helps", 0)
 
-    # Calculate grid size based on level
-    grid_size = min(5 + (level - 1) * 2, 25)
+    saved_map_level = request.session.get("saved_map_level")
+    if saved_map_level == level and request.session.get("saved_map"):
+        grid = request.session.get("saved_map")
+        grid_size = len(grid)
+        player_x = request.session.get("saved_player_x", 0)
+        player_y = request.session.get("saved_player_y", 0)
+    else:
+        # Calculate grid size based on level
+        grid_size = min(5 + (level - 1) * 2, 25)
 
-    # 0 = Empty, 1 = Wall, 2 = Monster, 3 = Pit, 4 = Exit
-    grid = [[1 for _ in range(grid_size)] for _ in range(grid_size)]
+        # 0 = Empty, 1 = Wall, 2 = Monster, 3 = Pit, 4 = Exit
+        grid = [[1 for _ in range(grid_size)] for _ in range(grid_size)]
 
-    # Generazione Labirinto tramite DFS
-    stack = [(0, 0)]
-    grid[0][0] = 0
-    visited = {(0, 0)}
+        # Generazione Labirinto tramite DFS
+        stack = [(0, 0)]
+        grid[0][0] = 0
+        visited = {(0, 0)}
 
-    while stack:
-        cx, cy = stack[-1]
-        neighbors = []
-        for dx, dy in [(0, 2), (0, -2), (2, 0), (-2, 0)]:
-            nx, ny = cx + dx, cy + dy
-            if 0 <= nx < grid_size and 0 <= ny < grid_size and (nx, ny) not in visited:
-                neighbors.append((nx, ny, dx, dy))
+        while stack:
+            cx, cy = stack[-1]
+            neighbors = []
+            for dx, dy in [(0, 2), (0, -2), (2, 0), (-2, 0)]:
+                nx, ny = cx + dx, cy + dy
+                if 0 <= nx < grid_size and 0 <= ny < grid_size and (nx, ny) not in visited:
+                    neighbors.append((nx, ny, dx, dy))
 
-        if neighbors:
-            nx, ny, dx, dy = random.choice(neighbors)
-            grid[cy + dy // 2][cx + dx // 2] = 0
-            grid[ny][nx] = 0
-            visited.add((nx, ny))
-            stack.append((nx, ny))
-        else:
-            stack.pop()
+            if neighbors:
+                nx, ny, dx, dy = random.choice(neighbors)
+                grid[cy + dy // 2][cx + dx // 2] = 0
+                grid[ny][nx] = 0
+                visited.add((nx, ny))
+                stack.append((nx, ny))
+            else:
+                stack.pop()
 
-    # Creazione percorsi multipli rompendo alcuni muri
-    # Assicuriamoci che a livelli maggiori ci siano più percorsi alternativi
-    num_loops = max(0, level - 1)
-    walls = []
-    for y in range(1, grid_size - 1):
-        for x in range(1, grid_size - 1):
-            if grid[y][x] == 1:
-                # Controlla se il muro divide due percorsi vuoti orizzontalmente o verticalmente
-                if (grid[y][x - 1] == 0 and grid[y][x + 1] == 0) or (
-                    grid[y - 1][x] == 0 and grid[y + 1][x] == 0
-                ):
-                    walls.append((x, y))
+        # Creazione percorsi multipli rompendo alcuni muri
+        # Assicuriamoci che a livelli maggiori ci siano più percorsi alternativi
+        num_loops = max(0, level - 1)
+        walls = []
+        for y in range(1, grid_size - 1):
+            for x in range(1, grid_size - 1):
+                if grid[y][x] == 1:
+                    # Controlla se il muro divide due percorsi vuoti orizzontalmente o verticalmente
+                    if (grid[y][x - 1] == 0 and grid[y][x + 1] == 0) or (
+                        grid[y - 1][x] == 0 and grid[y + 1][x] == 0
+                    ):
+                        walls.append((x, y))
 
-    if walls:
-        random.shuffle(walls)
-        for i in range(min(num_loops, len(walls))):
-            wx, wy = walls[i]
-            grid[wy][wx] = 0
+        if walls:
+            random.shuffle(walls)
+            for i in range(min(num_loops, len(walls))):
+                wx, wy = walls[i]
+                grid[wy][wx] = 0
 
-    # 3. Exit (sempre accessibile grazie all'algoritmo)
-    grid[grid_size - 1][grid_size - 1] = 4
+        # 3. Exit (sempre accessibile grazie all'algoritmo)
+        grid[grid_size - 1][grid_size - 1] = 4
 
-    path_cells = [
-        (x, y) for y in range(grid_size) for x in range(grid_size) if grid[y][x] == 0
-    ]
-    if (0, 0) in path_cells:
-        path_cells.remove((0, 0))
-    if (grid_size - 1, grid_size - 1) in path_cells:
-        path_cells.remove((grid_size - 1, grid_size - 1))
+        path_cells = [
+            (x, y) for y in range(grid_size) for x in range(grid_size) if grid[y][x] == 0
+        ]
+        if (0, 0) in path_cells:
+            path_cells.remove((0, 0))
+        if (grid_size - 1, grid_size - 1) in path_cells:
+            path_cells.remove((grid_size - 1, grid_size - 1))
 
-    # 1. Add Monsters (~20% della mappa visibile)
-    num_monsters = int(len(path_cells) * 0.20)
-    if num_monsters > 0 and len(path_cells) > 0:
-        monster_cells = random.sample(path_cells, min(num_monsters, len(path_cells)))
-        for mx, my in monster_cells:
-            grid[my][mx] = 2
-            path_cells.remove((mx, my))
+        # 1. Add Monsters (~20% della mappa visibile)
+        num_monsters = int(len(path_cells) * 0.20)
+        if num_monsters > 0 and len(path_cells) > 0:
+            monster_cells = random.sample(path_cells, min(num_monsters, len(path_cells)))
+            for mx, my in monster_cells:
+                grid[my][mx] = 2
+                path_cells.remove((mx, my))
 
-    # 2. Add Pits
-    # Compaiono solo se sono stati creati percorsi multipli (num_loops > 0)
-    if num_loops > 0:
-        num_pits = max(1, int(level / 2))
-        if num_pits > 0 and len(path_cells) > 0:
+        # 2. Add Pits (from level 2)
+        # Compaiono solo se sono stati creati percorsi multipli (num_loops > 0)
+        if level >= 2 and num_loops > 0:
+            num_pits = max(1, int(level / 2))
+            if num_pits > 0 and len(path_cells) > 0:
 
-            def is_reachable():
-                queue = [(0, 0)]
-                visited = {(0, 0)}
-                while queue:
-                    cx, cy = queue.pop(0)
-                    if (cx, cy) == (grid_size - 1, grid_size - 1):
-                        return True
-                    for dx, dy in [(0, 1), (0, -1), (1, 0), (-1, 0)]:
-                        nx, ny = cx + dx, cy + dy
-                        if (
-                            0 <= nx < grid_size
-                            and 0 <= ny < grid_size
-                            and (nx, ny) not in visited
-                        ):
-                            if grid[ny][nx] in [0, 2, 4, 5, 7, 8]:
-                                visited.add((nx, ny))
-                                queue.append((nx, ny))
-                return False
+                def is_reachable():
+                    queue = [(0, 0)]
+                    visited = {(0, 0)}
+                    while queue:
+                        cx, cy = queue.pop(0)
+                        if (cx, cy) == (grid_size - 1, grid_size - 1):
+                            return True
+                        for dx, dy in [(0, 1), (0, -1), (1, 0), (-1, 0)]:
+                            nx, ny = cx + dx, cy + dy
+                            if (
+                                0 <= nx < grid_size
+                                and 0 <= ny < grid_size
+                                and (nx, ny) not in visited
+                            ):
+                                if grid[ny][nx] in [0, 2, 4, 5, 7, 8]:
+                                    visited.add((nx, ny))
+                                    queue.append((nx, ny))
+                    return False
 
-            available_pits = list(path_cells)
-            random.shuffle(available_pits)
-            pits_placed = 0
-            for px, py in available_pits:
-                if pits_placed >= num_pits:
-                    break
-                # Prova a piazzare la trappola
-                grid[py][px] = 3
-                if is_reachable():
-                    pits_placed += 1
-                    path_cells.remove((px, py))
-                else:
-                    # Rimuovi la trappola perché blocca l'unica strada
-                    grid[py][px] = 0
+                available_pits = list(path_cells)
+                random.shuffle(available_pits)
+                pits_placed = 0
+                for px, py in available_pits:
+                    if pits_placed >= num_pits:
+                        break
+                    # Prova a piazzare la trappola
+                    grid[py][px] = 3
+                    if is_reachable():
+                        pits_placed += 1
+                        path_cells.remove((px, py))
+                    else:
+                        # Rimuovi la trappola perché blocca l'unica strada
+                        grid[py][px] = 0
 
-    # 3. Add hidden rewards (from level 3)
-    if level >= 3 and len(path_cells) > 0:
-        # 1 reward per dungeon (if available path cells)
-        reward_type = random.choices([7, 8], weights=[1, 2], k=1)[0]
-        rx, ry = random.choice(path_cells)
-        grid[ry][rx] = reward_type
-        path_cells.remove((rx, ry))
+        # 3. Add hidden rewards (from level 4)
+        if level >= 4 and len(path_cells) > 0:
+            # 1 reward per dungeon (if available path cells)
+            reward_type = random.choices([7, 8], weights=[1, 2], k=1)[0]
+            rx, ry = random.choice(path_cells)
+            grid[ry][rx] = reward_type
+            path_cells.remove((rx, ry))
+
+        player_x = 0
+        player_y = 0
 
     context = {
         "level": level,
@@ -155,6 +172,8 @@ def index(request):
         "monster_helps": monster_helps,
         "grid_size": grid_size,
         "map_data_json": json.dumps(grid),
+        "player_x": player_x,
+        "player_y": player_y,
     }
     return render(request, "game/map.html", context)
 
@@ -397,8 +416,93 @@ def update_state(request):
             request.session["monster_helps"] = data.get(
                 "monster_helps", request.session.get("monster_helps", 0)
             )
+            
+            if "map_data" in data:
+                request.session["saved_map"] = data["map_data"]
+                request.session["saved_player_x"] = data.get("player_x", 0)
+                request.session["saved_player_y"] = data.get("player_y", 0)
+                request.session["saved_map_level"] = request.session["level"]
+
             request.session.modified = True
             return JsonResponse({"status": "ok"})
         except Exception:
             return HttpResponseBadRequest("Invalid payload")
     return HttpResponseBadRequest("Invalid method")
+
+
+def pit_minigame(request):
+    """
+    Renders the Pit minigame (Simon Says).
+    """
+    level = request.session.get("level", 1)
+    score = request.session.get("score", 0)
+    lives = request.session.get("lives", 3)
+
+    # Difficulty increases with level
+    # Max sequence length is 8
+    # Formula: start with 3, add 1 every 2 levels, max 8.
+    sequence_length = min(8, 3 + (level // 2))
+    
+    context = {
+        "level": level,
+        "score": score,
+        "lives": lives,
+        "sequence_length": sequence_length,
+    }
+
+    return render(request, "game/pit_minigame.html", context)
+
+
+def pit_result(request):
+    """
+    Handles the result of the pit minigame.
+    """
+    if request.method == "POST":
+        try:
+            data = json.loads(request.body)
+            win = data.get("win", False)
+            
+            if win:
+                # Add some score for surviving the pit? (optional)
+                request.session["score"] = request.session.get("score", 0) + 5
+            else:
+                # Lose a life
+                lives = request.session.get("lives", 3)
+                request.session["lives"] = lives - 1
+            
+            request.session.modified = True
+            return JsonResponse({"status": "ok"})
+        except Exception:
+            return HttpResponseBadRequest("Invalid payload")
+    return HttpResponseBadRequest("Invalid method")
+
+
+def timing_game(request):
+    """
+    Renders the Timing Minigame modal.
+    """
+    x = request.GET.get("x", "")
+    y = request.GET.get("y", "")
+    level = request.GET.get("level", 1)
+    
+    context = {
+        "x": x,
+        "y": y,
+        "level": level,
+    }
+    return render(request, "game/partials/timing_modal.html", context)
+
+
+def rps_game(request):
+    """
+    Renders the Rock-Paper-Scissors modal.
+    """
+    x = request.GET.get("x", "")
+    y = request.GET.get("y", "")
+    
+    context = {
+        "x": x,
+        "y": y,
+    }
+    return render(request, "game/partials/rps_modal.html", context)
+

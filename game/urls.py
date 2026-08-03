@@ -13,4 +13,8 @@ urlpatterns = [
     path("leaderboard/", views.leaderboard, name="leaderboard"),
     path("hangman/", views.hangman, name="hangman"),
     path("update_state/", views.update_state, name="update_state"),
+    path("pit_minigame/", views.pit_minigame, name="pit_minigame"),
+    path("pit_result/", views.pit_result, name="pit_result"),
+    path("timing_game/", views.timing_game, name="timing_game"),
+    path("rps_game/", views.rps_game, name="rps_game"),
 ]

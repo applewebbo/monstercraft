@@ -1,0 +1,88 @@
+<div class="modal-overlay" id="question-modal-container"
+     x-data="{
+        status: 'playing',
+        playerChoice: null,
+        monsterChoice: null,
+        choices: ['🔥 Fuoco', '💧 Acqua', '🌿 Pianta'],
+        
+        play(choice) {
+            this.playerChoice = choice;
+            let mIndex = Math.floor(Math.random() * 3);
+            this.monsterChoice = this.choices[mIndex];
+            
+            let pIndex = this.choices.indexOf(choice);
+            
+            if (pIndex === mIndex) {
+                this.status = 'draw';
+            } else if (
+                (pIndex === 0 && mIndex === 2) || // Fuoco batte Pianta
+                (pIndex === 1 && mIndex === 0) || // Acqua batte Fuoco
+                (pIndex === 2 && mIndex === 1)    // Pianta batte Acqua
+            ) {
+                this.status = 'won';
+            } else {
+                this.status = 'lost';
+            }
+        },
+        
+        reset() {
+            this.status = 'playing';
+            this.playerChoice = null;
+            this.monsterChoice = null;
+        },
+        selectedIndex: 0,
+        handleKeydown(e) {
+            if (this.status === 'playing') {
+                if (e.key === 'ArrowLeft') {
+                    this.selectedIndex = (this.selectedIndex > 0) ? this.selectedIndex - 1 : 2;
+                } else if (e.key === 'ArrowRight') {
+                    this.selectedIndex = (this.selectedIndex < 2) ? this.selectedIndex + 1 : 0;
+                } else if (e.key === 'Enter' || e.key === ' ') {
+                    this.play(this.choices[this.selectedIndex]);
+                }
+            } else {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    if (this.status === 'won') {
+                        resolveEncounter(true, {{ x }}, {{ y }});
+                    } else if (this.status === 'lost') {
+                        resolveEncounter(false, {{ x }}, {{ y }});
+                    } else if (this.status === 'draw') {
+                        this.reset();
+                    }
+                }
+            }
+        }
+     }"
+     @keydown.window="handleKeydown($event)">
+    <style>
+        .btn-option.selected {
+            background-color: #4CAF50 !important;
+        }
+    </style>
+    <div class="modal-content" style="border-radius: 8px;">
+        <h2>Scontro Elementale!</h2>
+        <p x-show="status === 'playing'">Scegli l'elemento per attaccare il mostro!</p>
+        <p x-show="status === 'playing'" style="font-size: 0.9em; color: #aaa;">Acqua spegne Fuoco, Fuoco brucia Pianta, Pianta assorbe Acqua.</p>
+        
+        <div x-show="status !== 'playing'" style="margin: 20px 0;">
+            <p style="font-size: 1.2em;">Tu: <span x-text="playerChoice"></span></p>
+            <p style="font-size: 1.2em;">Mostro: <span x-text="monsterChoice"></span></p>
+        </div>
+
+        <h3 x-show="status === 'won'" style="color: #4CAF50;">Hai Vinto!</h3>
+        <h3 x-show="status === 'lost'" style="color: #f44336;">Hai Perso!</h3>
+        <h3 x-show="status === 'draw'" style="color: #FFEB3B;">Pareggio! Riprova.</h3>
+
+        <div x-show="status === 'playing'" style="display: flex; gap: 10px; justify-content: center; margin-top: 20px;">
+            <template x-for="(c, index) in choices" :key="index">
+                <button @click="play(c)" class="btn-option" style="background-color: #333;" :class="{'selected': selectedIndex === index}" x-text="c"></button>
+            </template>
+        </div>
+
+        <div style="margin-top: 20px;">
+            <button x-show="status === 'won'" onclick="resolveEncounter(true, {{ x }}, {{ y }})" class="btn-option" style="background-color: #4CAF50;">Continua</button>
+            <button x-show="status === 'lost'" onclick="resolveEncounter(false, {{ x }}, {{ y }})" class="btn-option" style="background-color: #f44336;">Ritirati</button>
+            <button x-show="status === 'draw'" @click="reset()" class="btn-option" style="background-color: #FF9800;">Gioca Ancora</button>
+        </div>
+    </div>
+</div>

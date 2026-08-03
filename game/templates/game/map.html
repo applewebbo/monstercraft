@@ -160,7 +160,7 @@
             <div x-show="alertType === 'reward'" style="margin: 10px auto;">
                 <img src="{% static 'game/images/treasure_logo.jpg' %}" alt="Tesoro" style="width: 120px; height: 120px; border: 4px solid #fff; border-radius: 8px; box-shadow: 4px 4px 0px #555; object-fit: cover;">
             </div>
-            
+
             <h2 x-show="alertType === 'pit'" style="color: #f44336;">Trappola!</h2>
             <h2 x-show="alertType === 'reward'" style="color: #FFEB3B;">Tesoro Trovato!</h2>
             <h2 x-show="alertType === 'gameover'" style="color: #f44336;">GAME OVER</h2>
@@ -343,13 +343,13 @@ document.addEventListener('alpine:init', () => {
                     }
                     let bagArray = bag.split(',').map(Number);
                     let roll = bagArray.shift(); // Estrae il primo elemento
-                    
+
                     if (bagArray.length === 0) {
                         sessionStorage.removeItem('encounterBag');
                     } else {
                         sessionStorage.setItem('encounterBag', bagArray.join(','));
                     }
-                    
+
                     if (roll === 0) {
                         htmx.ajax('GET', `/question/?x=${newX}&y=${newY}&level=${this.level}&monster_helps=${this.monsterHelps}`, {target: '#modal-container', swap: 'innerHTML'});
                     } else if (roll === 1) {
@@ -367,9 +367,9 @@ document.addEventListener('alpine:init', () => {
                     this.playerY = newY;
                 } else if (targetCell === 3) {
                     this.mapData[newY][newX] = 6; // Pozzo scoperto
-                    
+
                     // Salva lo stato e vai al minigioco del pozzo
-                    this.isModalOpen = true; 
+                    this.isModalOpen = true;
                     fetch('{% url "game:update_state" %}', {
                         method: 'POST',
                         headers: {

@@ -19,7 +19,7 @@
          handleKeydown(e) {
              const buttons = Array.from(this.$el.querySelectorAll('.options button')).filter(b => b.style.display !== 'none');
              if (buttons.length === 0) return;
-             
+
              let currentIndex = buttons.findIndex(b => b.classList.contains('selected'));
              if (currentIndex === -1) currentIndex = 0;
 
@@ -36,7 +36,7 @@
              } else {
                  return;
              }
-             
+
              buttons.forEach(b => b.classList.remove('selected'));
              buttons[currentIndex].classList.add('selected');
          }

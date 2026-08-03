@@ -4,14 +4,14 @@
         playerChoice: null,
         monsterChoice: null,
         choices: ['🔥 Fuoco', '💧 Acqua', '🌿 Pianta'],
-        
+
         play(choice) {
             this.playerChoice = choice;
             let mIndex = Math.floor(Math.random() * 3);
             this.monsterChoice = this.choices[mIndex];
-            
+
             let pIndex = this.choices.indexOf(choice);
-            
+
             if (pIndex === mIndex) {
                 this.status = 'draw';
             } else if (
@@ -24,7 +24,7 @@
                 this.status = 'lost';
             }
         },
-        
+
         reset() {
             this.status = 'playing';
             this.playerChoice = null;
@@ -63,7 +63,7 @@
         <h2>Scontro Elementale!</h2>
         <p x-show="status === 'playing'">Scegli l'elemento per attaccare il mostro!</p>
         <p x-show="status === 'playing'" style="font-size: 0.9em; color: #aaa;">Acqua spegne Fuoco, Fuoco brucia Pianta, Pianta assorbe Acqua.</p>
-        
+
         <div x-show="status !== 'playing'" style="margin: 20px 0;">
             <p style="font-size: 1.2em;">Tu: <span x-text="playerChoice"></span></p>
             <p style="font-size: 1.2em;">Mostro: <span x-text="monsterChoice"></span></p>

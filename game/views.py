@@ -19,13 +19,13 @@ def start(request):
         request.session["asked_questions"] = []
         request.session["asked_words"] = []
         request.session["age_group"] = request.POST.get("age_group", "9-12")
-        
+
         # Clear saved map state
         request.session.pop("saved_map", None)
         request.session.pop("saved_player_x", None)
         request.session.pop("saved_player_y", None)
         request.session.pop("saved_map_level", None)
-        
+
         request.session.modified = True
         return redirect("game:game")
 
@@ -64,7 +64,11 @@ def index(request):
             neighbors = []
             for dx, dy in [(0, 2), (0, -2), (2, 0), (-2, 0)]:
                 nx, ny = cx + dx, cy + dy
-                if 0 <= nx < grid_size and 0 <= ny < grid_size and (nx, ny) not in visited:
+                if (
+                    0 <= nx < grid_size
+                    and 0 <= ny < grid_size
+                    and (nx, ny) not in visited
+                ):
                     neighbors.append((nx, ny, dx, dy))
 
             if neighbors:
@@ -99,7 +103,10 @@ def index(request):
         grid[grid_size - 1][grid_size - 1] = 4
 
         path_cells = [
-            (x, y) for y in range(grid_size) for x in range(grid_size) if grid[y][x] == 0
+            (x, y)
+            for y in range(grid_size)
+            for x in range(grid_size)
+            if grid[y][x] == 0
         ]
         if (0, 0) in path_cells:
             path_cells.remove((0, 0))
@@ -109,7 +116,9 @@ def index(request):
         # 1. Add Monsters (~20% della mappa visibile)
         num_monsters = int(len(path_cells) * 0.20)
         if num_monsters > 0 and len(path_cells) > 0:
-            monster_cells = random.sample(path_cells, min(num_monsters, len(path_cells)))
+            monster_cells = random.sample(
+                path_cells, min(num_monsters, len(path_cells))
+            )
             for mx, my in monster_cells:
                 grid[my][mx] = 2
                 path_cells.remove((mx, my))
@@ -416,7 +425,7 @@ def update_state(request):
             request.session["monster_helps"] = data.get(
                 "monster_helps", request.session.get("monster_helps", 0)
             )
-            
+
             if "map_data" in data:
                 request.session["saved_map"] = data["map_data"]
                 request.session["saved_player_x"] = data.get("player_x", 0)
@@ -442,7 +451,7 @@ def pit_minigame(request):
     # Max sequence length is 8
     # Formula: start with 3, add 1 every 2 levels, max 8.
     sequence_length = min(8, 3 + (level // 2))
-    
+
     context = {
         "level": level,
         "score": score,
@@ -461,7 +470,7 @@ def pit_result(request):
         try:
             data = json.loads(request.body)
             win = data.get("win", False)
-            
+
             if win:
                 # Add some score for surviving the pit? (optional)
                 request.session["score"] = request.session.get("score", 0) + 5
@@ -469,7 +478,7 @@ def pit_result(request):
                 # Lose a life
                 lives = request.session.get("lives", 3)
                 request.session["lives"] = lives - 1
-            
+
             request.session.modified = True
             return JsonResponse({"status": "ok"})
         except Exception:
@@ -484,7 +493,7 @@ def timing_game(request):
     x = request.GET.get("x", "")
     y = request.GET.get("y", "")
     level = request.GET.get("level", 1)
-    
+
     context = {
         "x": x,
         "y": y,
@@ -499,10 +508,9 @@ def rps_game(request):
     """
     x = request.GET.get("x", "")
     y = request.GET.get("y", "")
-    
+
     context = {
         "x": x,
         "y": y,
     }
     return render(request, "game/partials/rps_modal.html", context)
-

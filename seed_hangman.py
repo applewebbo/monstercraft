@@ -53,7 +53,6 @@ words = [
     ("SCOIATTOLO", "Animale che mangia le noci", 3, "5-8"),
     ("GIRAFFA", "Ha un collo lunghissimo", 3, "5-8"),
     ("ELEFANTE", "Animale enorme con la proboscide", 3, "5-8"),
-
     # 9-12 ANNI
     ("ALBERO", "Ha foglie e tronco", 1, "9-12"),
     ("SCUOLA", "Dove si va per imparare", 1, "9-12"),
@@ -99,7 +98,6 @@ words = [
     ("TESORO", "Ricchezze nascoste", 3, "9-12"),
     ("ASTRONOMIA", "Scienza che studia le stelle", 3, "9-12"),
     ("MATEMATICA", "Scienza dei numeri", 3, "9-12"),
-
     # 13-17 ANNI
     ("INTERNET", "La rete globale", 1, "13-17"),
     ("COMPUTER", "Macchina per elaborare dati", 1, "13-17"),
@@ -144,7 +142,6 @@ words = [
     ("ILLUMINISMO", "Movimento culturale del Settecento", 3, "13-17"),
     ("ROBOTICA", "Scienza che progetta robot", 3, "13-17"),
     ("BIOTECNOLOGIA", "Tecnologia basata sulla biologia", 3, "13-17"),
-
     # ADULT
     ("ECONOMIA", "Scienza che studia produzione e consumo", 1, "ADULT"),
     ("POLITICA", "Arte del governare", 1, "ADULT"),

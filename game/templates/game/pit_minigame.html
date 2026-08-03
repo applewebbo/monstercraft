@@ -15,7 +15,7 @@
         opacity: 0.6;
         transition: transform 0.1s, opacity 0.2s, box-shadow 0.1s;
     }
-    
+
     .stone:active:not([disabled]) {
         transform: translate(2px, 2px);
         box-shadow: 2px 2px 0px #555;
@@ -47,7 +47,7 @@
         <p x-show="gameState === 'start'" style="font-size: 1.2rem; margin-bottom: 20px;">
             Sei caduto in un pozzo! Memorizza la sequenza delle pietre sporgenti per arrampicarti fuori.
         </p>
-        
+
         <div x-show="gameState === 'start'" style="margin: 20px auto;">
             <img src="{% static 'game/images/pit_logo.jpg' %}" alt="Pozzo Oscuro" style="width: 150px; height: 150px; border: 4px solid #fff; border-radius: 8px; box-shadow: 4px 4px 0px #555; object-fit: cover;">
         </div>
@@ -64,23 +64,23 @@
         <p x-show="gameState === 'lost'" style="font-size: 1.5rem; color: #f44336; font-weight: bold;">
             Hai sbagliato pietra! Sei caduto e hai perso una vita.
         </p>
-        
+
         <div style="display: grid; grid-template-columns: 100px 100px 100px; grid-template-rows: 100px 100px; gap: 20px; margin: 30px auto; width: fit-content;">
             <!-- Riga in alto -->
             <div></div>
             <div class="stone stone-red" :class="{ 'active': activeStone === 0 }" @click="clickStone(0)" :disabled="gameState !== 'playing'" title="Su (Freccia Su)"></div>
             <div></div>
-            
+
             <!-- Riga in basso -->
             <div class="stone stone-green" :class="{ 'active': activeStone === 1 }" @click="clickStone(1)" :disabled="gameState !== 'playing'" title="Sinistra (Freccia Sinistra)"></div>
             <div class="stone stone-blue" :class="{ 'active': activeStone === 2 }" @click="clickStone(2)" :disabled="gameState !== 'playing'" title="Giù (Freccia Giù)"></div>
             <div class="stone stone-yellow" :class="{ 'active': activeStone === 3 }" @click="clickStone(3)" :disabled="gameState !== 'playing'" title="Destra (Freccia Destra)"></div>
         </div>
-        
+
         <button x-show="gameState === 'start'" @click="startSequence()" class="btn-option" style="background-color: #9C27B0; font-size: 1.2rem; padding: 15px 30px;">
             INIZIA
         </button>
-        
+
         <button x-show="gameState === 'won' || gameState === 'lost'" @click="finishGame()" class="btn-option" style="background-color: #4CAF50; font-size: 1.2rem; padding: 15px 30px;">
             CONTINUA
         </button>
@@ -95,13 +95,13 @@ document.addEventListener('alpine:init', () => {
         playerSequence: [],
         gameState: 'start', // start, showing, playing, won, lost
         activeStone: null,
-        
+
         initGame() {
             // Genera la sequenza
             for(let i=0; i<this.sequenceLength; i++) {
                 this.sequence.push(Math.floor(Math.random() * 4));
             }
-            
+
             // Aggiungi event listener per tastiera
             window.addEventListener('keydown', (e) => {
                 if ((e.key === 'Enter' || e.key === ' ')) {
@@ -118,49 +118,49 @@ document.addEventListener('alpine:init', () => {
                 }
             });
         },
-        
+
         async startSequence() {
             this.gameState = 'showing';
             await this.sleep(800);
-            
+
             for(let i=0; i<this.sequence.length; i++) {
                 this.activeStone = this.sequence[i];
                 await this.sleep(400); // tempo in cui è accesa (velocizzato da 600)
                 this.activeStone = null;
                 await this.sleep(150); // pausa tra una e l'altra (velocizzato da 300)
             }
-            
+
             this.gameState = 'playing';
             this.playerSequence = [];
         },
-        
+
         async clickStone(index) {
             if (this.gameState !== 'playing') return;
-            
+
             this.playerSequence.push(index);
-            
+
             // Breve flash per il feedback
             this.activeStone = index;
             setTimeout(() => { this.activeStone = null; }, 200);
-            
+
             // Controlla se l'ultima pietra inserita è corretta
             let currentIndex = this.playerSequence.length - 1;
-            
+
             if (this.playerSequence[currentIndex] !== this.sequence[currentIndex]) {
                 // Sbagliato
                 this.gameState = 'lost';
                 return;
             }
-            
+
             // Se ha completato la sequenza
             if (this.playerSequence.length === this.sequence.length) {
                 this.gameState = 'won';
             }
         },
-        
+
         async finishGame() {
             let win = (this.gameState === 'won');
-            
+
             await fetch('{% url "game:pit_result" %}', {
                 method: 'POST',
                 headers: {
@@ -169,11 +169,11 @@ document.addEventListener('alpine:init', () => {
                 },
                 body: JSON.stringify({ win: win })
             });
-            
+
             // Torna alla mappa
             window.location.replace('{% url "game:game" %}');
         },
-        
+
         sleep(ms) {
             return new Promise(resolve => setTimeout(resolve, ms));
         }

@@ -12,7 +12,7 @@
             this.targetLeft = 50 - (this.targetWidth / 2);
             this.animate();
         },
-        
+
         destroy() {
             if (this.animationId) cancelAnimationFrame(this.animationId);
         },
@@ -70,7 +70,7 @@
         </div>
 
         <button x-show="status === 'playing'" @click="hit()" class="btn-option" style="background-color: #FF9800;">COLPISCI!</button>
-        
+
         <button x-show="status === 'won'" onclick="resolveEncounter(true, {{ x }}, {{ y }})" class="btn-option" style="background-color: #4CAF50;">Continua</button>
         <button x-show="status === 'lost'" onclick="resolveEncounter(false, {{ x }}, {{ y }})" class="btn-option" style="background-color: #f44336;">Ritirati</button>
     </div>

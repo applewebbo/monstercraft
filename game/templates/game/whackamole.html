@@ -1,0 +1,325 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}MonsterCraft - Schiaccia il Mostro{% endblock %}
+
+{% block extra_head %}
+<style>
+    .whack-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 2vh;
+        min-height: 100%;
+        font-family: 'Press Start 2P', cursive;
+        padding: 2vh;
+        box-sizing: border-box;
+        position: relative;
+    }
+
+    .status-panel {
+        background: #222;
+        padding: 2vh;
+        border: 4px solid #fff;
+        border-radius: 8px;
+        text-align: center;
+        box-shadow: 4px 4px 0px #555;
+        width: 100%;
+        max-width: 600px;
+        display: flex;
+        justify-content: space-around;
+        align-items: center;
+        font-size: clamp(12px, 3vh, 18px);
+    }
+
+    .status-item span {
+        color: #ffeb3b;
+        font-size: clamp(16px, 4vh, 24px);
+        margin-top: 5px;
+        display: block;
+    }
+
+    .grid {
+        display: grid;
+        grid-template-columns: repeat(3, clamp(70px, 18vw, 110px));
+        grid-template-rows: repeat(2, clamp(70px, 18vw, 110px));
+        gap: 15px;
+        margin: 20px 0;
+        background: #333;
+        padding: 20px;
+        border: 4px solid #fff;
+        border-radius: 8px;
+        justify-content: center;
+    }
+
+    .hole {
+        width: 100%;
+        height: 100%;
+        background: #111;
+        border: 4px solid #555;
+        border-radius: 50%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        font-size: clamp(40px, 10vw, 60px);
+        cursor: pointer;
+        user-select: none;
+        overflow: hidden;
+        position: relative;
+    }
+
+    .hole-up { grid-column: 2; grid-row: 1; }
+    .hole-left { grid-column: 1; grid-row: 2; }
+    .hole-down { grid-column: 2; grid-row: 2; }
+    .hole-right { grid-column: 3; grid-row: 2; }
+
+    .mole {
+        position: absolute;
+        bottom: -100%;
+        left: 50%;
+        transform: translateX(-50%);
+        transition: bottom 0.1s ease-out, transform 0.1s;
+    }
+
+    .mole.up {
+        bottom: 5%;
+    }
+
+    .mole.hit {
+        filter: grayscale(100%) brightness(50%);
+        transform: translateX(-50%) scale(0.8);
+    }
+
+    .key-hint {
+        position: absolute;
+        bottom: 5px;
+        right: 5px;
+        background: rgba(0,0,0,0.7);
+        color: #fff;
+        font-size: clamp(10px, 2vw, 16px);
+        padding: 5px;
+        border-radius: 5px;
+        border: 2px solid #555;
+        z-index: 2;
+    }
+
+    .overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        background: rgba(0,0,0,0.85);
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        z-index: 100;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<script id="whackamole-config" type="application/json">
+{
+    "targetScore": {{ target_score }},
+    "timeLimit": {{ time_limit }},
+    "spawnRate": {{ spawn_rate }},
+    "level": {{ level }},
+    "score": {{ score }},
+    "lives": {{ lives }}
+}
+</script>
+
+<div class="whack-container" x-data="whackGame(JSON.parse(document.getElementById('whackamole-config').textContent))" @keydown.window="handleKeydown($event)">
+
+    <h2 style="color: #f44336; text-shadow: 2px 2px 0 #000; text-align: center; font-size: clamp(16px, 3vh, 24px);">SCHIACCIA IL MOSTRO</h2>
+
+    <div class="status-panel">
+        <div class="status-item">
+            Tempo:
+            <span x-text="timeLeft" :style="timeLeft <= 5 ? 'color: #f44336;' : ''"></span>
+        </div>
+        <div class="status-item">
+            Obiettivo:
+            <span><span x-text="currentScore"></span>/<span x-text="targetScore"></span></span>
+        </div>
+    </div>
+
+    <div class="grid" x-show="status === 'playing' || status === 'ready'">
+        <template x-for="(hole, index) in holes" :key="index">
+            <div class="hole" :class="hole.cssClass" @mousedown="whack(index)" @touchstart.prevent="whack(index)">
+                <span class="mole" :class="{ 'up': hole.up, 'hit': hole.hit }">👹</span>
+                <span class="key-hint" x-text="hole.keyHint"></span>
+            </div>
+        </template>
+    </div>
+
+    <p style="font-size: clamp(10px, 1.5vh, 12px); color: #aaa; text-align: center; max-width: 500px; line-height: 1.5;" x-show="status === 'playing' || status === 'ready'">
+        Usa le <strong style="color: #fff;">Frecce Direzionali</strong> della tastiera oppure clicca col mouse per schiacciare i mostri!
+    </p>
+
+    <!-- Start Overlay -->
+    <div class="overlay" x-show="status === 'ready'" x-cloak>
+        <h2 style="color: #FFEB3B; text-align: center; text-shadow: 2px 2px 0 #000;">PREPARATI!</h2>
+        <p style="margin: 20px 0; text-align:center; line-height: 1.5;">Schiaccia almeno <strong x-text="targetScore"></strong> mostri<br>in <strong x-text="timeLimit"></strong> secondi!</p>
+        <button class="btn-option" style="background-color: #4CAF50;" @click="startGame()">INIZIA</button>
+    </div>
+
+    <!-- Result Overlay -->
+    <div class="overlay" x-show="status === 'won' || status === 'lost'" x-cloak>
+        <h2 x-show="status === 'won'" style="color: #4CAF50; text-shadow: 2px 2px 0 #000; text-align: center;">VITTORIA! (+50 pt)</h2>
+        <h2 x-show="status === 'lost'" style="color: #f44336; text-shadow: 2px 2px 0 #000; text-align: center;">TEMPO SCADUTO... (-1 VITA)</h2>
+
+        <button type="button" @click="proceedToLevel()" class="btn-option" style="margin-top: 20px; background-color: #03a9f4;">
+            AVANTI
+        </button>
+    </div>
+
+</div>
+
+<script>
+document.addEventListener('alpine:init', () => {
+    Alpine.data('whackGame', (config) => ({
+        targetScore: config.targetScore,
+        timeLimit: config.timeLimit,
+        spawnRate: config.spawnRate,
+        level: config.level,
+        score: config.score,
+        lives: config.lives,
+
+        timeLeft: config.timeLimit,
+        currentScore: 0,
+        status: 'ready', // ready, playing, won, lost
+        holes: [
+            { up: false, hit: false, timeout: null, keyHint: '▲', key: 'ArrowUp', cssClass: 'hole-up' },
+            { up: false, hit: false, timeout: null, keyHint: '◀', key: 'ArrowLeft', cssClass: 'hole-left' },
+            { up: false, hit: false, timeout: null, keyHint: '▶', key: 'ArrowRight', cssClass: 'hole-right' },
+            { up: false, hit: false, timeout: null, keyHint: '▼', key: 'ArrowDown', cssClass: 'hole-down' }
+        ],
+
+        gameInterval: null,
+        timerInterval: null,
+
+        startGame() {
+            this.status = 'playing';
+
+            this.timerInterval = setInterval(() => {
+                this.timeLeft--;
+                if (this.timeLeft <= 0) {
+                    this.endGame();
+                }
+            }, 1000);
+
+            this.gameInterval = setInterval(() => {
+                if (this.status === 'playing') this.popMole();
+            }, this.spawnRate);
+
+            // Pop first mole immediately
+            this.popMole();
+        },
+
+        popMole() {
+            // Find empty holes
+            let emptyHoles = this.holes.map((h, i) => !h.up ? i : -1).filter(i => i !== -1);
+            if (emptyHoles.length === 0) return;
+
+            let idx = emptyHoles[Math.floor(Math.random() * emptyHoles.length)];
+            let hole = this.holes[idx];
+
+            hole.up = true;
+            hole.hit = false;
+
+            // Moles stay up much longer now (between 1000ms and 1800ms) to make it easier
+            let duration = Math.random() * 800 + 1000;
+
+            hole.timeout = setTimeout(() => {
+                hole.up = false;
+                hole.hit = false;
+            }, duration);
+        },
+
+        whack(idx) {
+            if (this.status !== 'playing') return;
+
+            let hole = this.holes[idx];
+            if (hole.up && !hole.hit) {
+                hole.hit = true;
+                this.currentScore++;
+
+                // Keep it hit briefly before going down
+                clearTimeout(hole.timeout);
+                setTimeout(() => {
+                    hole.up = false;
+                }, 150);
+
+                if (this.currentScore >= this.targetScore) {
+                    this.status = 'won';
+                    this.score += 50;
+                    this.cleanup();
+                }
+            }
+        },
+
+        handleKeydown(e) {
+            if (["ArrowUp","ArrowDown","ArrowLeft","ArrowRight", " "].indexOf(e.key) > -1) {
+                e.preventDefault();
+            }
+
+            if (this.status === 'ready' && e.key === 'Enter') {
+                this.startGame();
+                return;
+            }
+            if ((this.status === 'won' || this.status === 'lost') && e.key === 'Enter') {
+                this.proceedToLevel();
+                return;
+            }
+            if (this.status === 'playing') {
+                const idx = this.holes.findIndex(h => h.key === e.key);
+                if (idx !== -1) {
+                    this.whack(idx);
+                }
+            }
+        },
+
+        endGame() {
+            this.cleanup();
+            if (this.currentScore >= this.targetScore) {
+                this.status = 'won';
+                this.score += 50;
+            } else {
+                this.status = 'lost';
+                this.lives--;
+            }
+        },
+
+        cleanup() {
+            clearInterval(this.timerInterval);
+            clearInterval(this.gameInterval);
+            this.holes.forEach(h => {
+                clearTimeout(h.timeout);
+                h.up = false;
+            });
+        },
+
+        async proceedToLevel() {
+            let finalLives = this.lives;
+            await fetch('{% url "game:update_state" %}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token }}'
+                },
+                body: JSON.stringify({
+                    level: this.level + 1,
+                    score: this.score,
+                    lives: finalLives
+                })
+            });
+            window.location.replace('{% url "game:game" %}');
+        }
+    }));
+});
+</script>
+{% endblock %}

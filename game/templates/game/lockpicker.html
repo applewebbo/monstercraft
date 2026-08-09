@@ -1,0 +1,329 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}MonsterCraft - Scassina la Serratura{% endblock %}
+
+{% block extra_head %}
+<style>
+    .lockpicker-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 1vh;
+        min-height: 100%;
+        font-family: 'Press Start 2P', cursive;
+        padding: 2vh;
+        box-sizing: border-box;
+    }
+
+    .status-panel {
+        background: #222;
+        padding: 1.5vh;
+        border: 4px solid #fff;
+        border-radius: 8px;
+        text-align: center;
+        box-shadow: 4px 4px 0px #555;
+        width: 100%;
+        max-width: 600px;
+    }
+
+    .attempts-left {
+        color: #f44336;
+        font-size: 14px;
+        margin-bottom: 5px;
+    }
+
+    .grid {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        align-items: center;
+        margin: 10px 0;
+    }
+
+    .row {
+        display: flex;
+        gap: 6px;
+    }
+
+    .slot {
+        width: clamp(25px, 5vh, 40px);
+        height: clamp(25px, 5vh, 40px);
+        border: 3px solid #555;
+        border-radius: 50%;
+        background-color: #111;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        font-size: clamp(12px, 2vh, 18px);
+        cursor: pointer;
+        transition: transform 0.1s;
+    }
+
+    .slot.active {
+        border-color: #fff;
+        box-shadow: 0 0 10px #fff;
+    }
+
+    .slot.feedback-correct {
+        border-color: #4CAF50;
+    }
+
+    .slot.feedback-present {
+        border-color: #FFEB3B;
+    }
+
+    .slot.feedback-wrong {
+        border-color: #f44336;
+        opacity: 0.5;
+    }
+
+    .color-picker {
+        display: flex;
+        gap: 8px;
+        margin-top: 10px;
+        flex-wrap: wrap;
+        justify-content: center;
+        align-items: center;
+    }
+
+    .color-btn {
+        width: clamp(30px, 5vh, 40px);
+        height: clamp(30px, 5vh, 40px);
+        border-radius: 50%;
+        border: 3px solid #fff;
+        cursor: pointer;
+        transition: transform 0.2s;
+    }
+
+    .color-btn:hover {
+        transform: scale(1.1);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<script id="lockpicker-config" type="application/json">
+{
+    "secretCode": {{ secret_code|safe }},
+    "availableColors": {{ available_colors|safe }},
+    "codeLength": {{ code_length }},
+    "level": {{ level }},
+    "score": {{ score }},
+    "lives": {{ lives }},
+    "maxAttempts": {{ max_attempts }}
+}
+</script>
+
+<div class="lockpicker-container" x-data="lockpickerGame(JSON.parse(document.getElementById('lockpicker-config').textContent))" @keydown.window="handleKeydown($event)">
+
+    <img src="{% static 'game/images/gatekeeper.jpg' %}" alt="Serratura" style="max-height: 15vh; max-width: 15vh; aspect-ratio: 1; border-radius: 8px; border: 4px solid #fff; box-shadow: 4px 4px 0px #9C27B0; image-rendering: pixelated;">
+    <h2 style="color: #9C27B0; text-shadow: 2px 2px 0 #000; text-align: center; font-size: clamp(16px, 3vh, 24px);">SBLOCCA IL FORZIERE</h2>
+
+    <div class="status-panel">
+        <div class="attempts-left">
+            Tentativi Rimasti: <span x-text="maxAttempts - currentAttemptIndex"></span>
+        </div>
+        <p style="font-size: 10px; line-height: 1.5; color: #aaa;">Indovina la combinazione di colori!<br><span style="color:#4CAF50;">Verde = Giusto</span>, <span style="color:#FFEB3B;">Giallo = Posizione Errata</span></p>
+
+        <div class="grid">
+            <template x-for="(row, rIndex) in grid" :key="rIndex">
+                <div class="row">
+                    <template x-for="(col, cIndex) in row" :key="cIndex">
+                        <div class="slot"
+                             :class="{
+                                'active': rIndex === currentAttemptIndex && cIndex === currentSlotIndex,
+                                'feedback-correct': feedbackGrid[rIndex] && feedbackGrid[rIndex][cIndex] === 'correct',
+                                'feedback-present': feedbackGrid[rIndex] && feedbackGrid[rIndex][cIndex] === 'present',
+                                'feedback-wrong': feedbackGrid[rIndex] && feedbackGrid[rIndex][cIndex] === 'wrong'
+                             }"
+                             :style="col ? `background-color: ${col}` : ''"
+                             @click="selectSlot(rIndex, cIndex)">
+                            <span x-show="feedbackGrid[rIndex] && feedbackGrid[rIndex][cIndex] === 'correct'" style="color: #fff; text-shadow: 1px 1px 0 #000;">✔️</span>
+                            <span x-show="feedbackGrid[rIndex] && feedbackGrid[rIndex][cIndex] === 'present'" style="color: #fff; text-shadow: 1px 1px 0 #000;">?</span>
+                            <span x-show="feedbackGrid[rIndex] && feedbackGrid[rIndex][cIndex] === 'wrong'" style="color: #fff; text-shadow: 1px 1px 0 #000;">✖️</span>
+                        </div>
+                    </template>
+                </div>
+            </template>
+        </div>
+
+        <!-- Color Palette -->
+        <div class="color-picker" x-show="status === 'playing'">
+            <template x-for="(color, index) in availableColors" :key="color">
+                <div class="color-btn" style="display: flex; justify-content: center; align-items: center;" :style="`background-color: ${color}`" @click="setColor(color)">
+                    <span style="color: #fff; font-size: 14px; text-shadow: 1px 1px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000;" x-text="index + 1"></span>
+                </div>
+            </template>
+            <button class="btn-option" style="padding: 10px; font-size: 12px; margin-left: 10px;" @click="submitAttempt()" :disabled="!isRowComplete()">CONFERMA</button>
+        </div>
+        <p x-show="status === 'playing'" style="font-size: 8px; color: #aaa; margin-top: 10px;">
+            (Premi i numeri 1-6 per scegliere i colori, CANC/BACKSPACE per annullare)
+        </p>
+    </div>
+
+    <!-- Result Area -->
+    <div x-show="status !== 'playing'" style="text-align: center; margin-top: 20px;" x-cloak>
+        <h2 x-show="status === 'won'" style="color: #4CAF50;">FORZIERE APERTO! (+50 pt)</h2>
+        <h2 x-show="status === 'lost'" style="color: #f44336;">SERRATURA ROTTA... (-1 VITA)</h2>
+        <div x-show="status === 'lost'" style="margin-top:10px;">
+            <p>La combinazione era:</p>
+            <div style="display:flex; gap:10px; justify-content:center; margin-top:10px;">
+                <template x-for="col in secretCode">
+                    <div style="width:30px; height:30px; border-radius:50%; border:2px solid #fff;" :style="`background-color: ${col}`"></div>
+                </template>
+            </div>
+        </div>
+
+        <button type="button" @click="proceedToLevel()" class="btn-option" style="margin-top: 20px; background-color: #9C27B0;">
+            ENTRA NEL LIVELLO <span x-text="level + 1"></span>
+        </button>
+    </div>
+
+</div>
+
+<script>
+document.addEventListener('alpine:init', () => {
+    Alpine.data('lockpickerGame', (config) => ({
+        secretCode: config.secretCode,
+        availableColors: config.availableColors,
+        codeLength: config.codeLength,
+        maxAttempts: config.maxAttempts,
+        level: config.level,
+        score: config.score,
+        lives: config.lives,
+
+        grid: [],
+        feedbackGrid: [],
+        currentAttemptIndex: 0,
+        currentSlotIndex: 0,
+        status: 'playing',
+
+        init() {
+            // Initialize empty grid
+            for(let i=0; i<this.maxAttempts; i++) {
+                this.grid.push(Array(this.codeLength).fill(null));
+                this.feedbackGrid.push(Array(this.codeLength).fill(null));
+            }
+        },
+
+        selectSlot(rIndex, cIndex) {
+            if (this.status !== 'playing' || rIndex !== this.currentAttemptIndex) return;
+            this.currentSlotIndex = cIndex;
+        },
+
+        setColor(color) {
+            if (this.status !== 'playing') return;
+            this.grid[this.currentAttemptIndex][this.currentSlotIndex] = color;
+
+            // Move to next empty slot if available
+            let nextSlot = this.grid[this.currentAttemptIndex].indexOf(null);
+            if (nextSlot !== -1) {
+                this.currentSlotIndex = nextSlot;
+            } else {
+                // Keep it on the last slot if full
+                this.currentSlotIndex = this.codeLength - 1;
+            }
+        },
+
+        undoColor() {
+            if (this.status !== 'playing') return;
+
+            // If current slot is empty and it's not the first slot, step back
+            if (this.grid[this.currentAttemptIndex][this.currentSlotIndex] === null && this.currentSlotIndex > 0) {
+                this.currentSlotIndex--;
+            }
+            this.grid[this.currentAttemptIndex][this.currentSlotIndex] = null;
+        },
+
+        isRowComplete() {
+            if (this.status !== 'playing') return false;
+            return !this.grid[this.currentAttemptIndex].includes(null);
+        },
+
+        submitAttempt() {
+            if (!this.isRowComplete()) return;
+
+            let currentGuess = [...this.grid[this.currentAttemptIndex]];
+            let codeCopy = [...this.secretCode];
+            let feedback = Array(this.codeLength).fill(null);
+
+            // First pass: Correct position and color
+            for (let i = 0; i < this.codeLength; i++) {
+                if (currentGuess[i] === codeCopy[i]) {
+                    feedback[i] = 'correct';
+                    codeCopy[i] = null; // Mark as used
+                    currentGuess[i] = null;
+                }
+            }
+
+            // Second pass: Correct color, wrong position
+            for (let i = 0; i < this.codeLength; i++) {
+                if (currentGuess[i] !== null) {
+                    let foundIndex = codeCopy.indexOf(currentGuess[i]);
+                    if (foundIndex !== -1) {
+                        feedback[i] = 'present';
+                        codeCopy[foundIndex] = null;
+                    } else {
+                        feedback[i] = 'wrong';
+                    }
+                }
+            }
+
+            this.feedbackGrid[this.currentAttemptIndex] = feedback;
+
+            // Check win
+            if (feedback.every(f => f === 'correct')) {
+                this.status = 'won';
+                this.score += 50;
+            } else {
+                this.currentAttemptIndex++;
+                this.currentSlotIndex = 0;
+                if (this.currentAttemptIndex >= this.maxAttempts) {
+                    this.status = 'lost';
+                    this.lives--;
+                }
+            }
+        },
+
+        handleKeydown(e) {
+            if (e.key === 'Backspace' || e.key === 'Delete') {
+                e.preventDefault(); // Prevents the browser from going back
+            }
+            if ((this.status === 'won' || this.status === 'lost') && e.key === 'Enter') {
+                this.proceedToLevel();
+            } else if (this.status === 'playing') {
+                if (e.key === 'Enter' && this.isRowComplete()) {
+                    this.submitAttempt();
+                } else if (e.key >= '1' && e.key <= '6') {
+                    let colorIdx = parseInt(e.key) - 1;
+                    if (colorIdx < this.availableColors.length) {
+                        this.setColor(this.availableColors[colorIdx]);
+                    }
+                } else if (e.key === 'Backspace' || e.key === 'Delete') {
+                    this.undoColor();
+                }
+            }
+        },
+
+        async proceedToLevel() {
+            let finalLives = this.lives;
+            await fetch('{% url "game:update_state" %}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token }}'
+                },
+                body: JSON.stringify({
+                    level: this.level + 1,
+                    score: this.score,
+                    lives: finalLives
+                })
+            });
+            window.location.replace('{% url "game:game" %}');
+        }
+    }));
+});
+</script>
+{% endblock %}

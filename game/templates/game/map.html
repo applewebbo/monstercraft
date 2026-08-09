@@ -272,7 +272,10 @@ document.addEventListener('alpine:init', () => {
                     monster_helps: this.monsterHelps
                 })
             });
-            window.location.replace('{% url "game:hangman" %}');
+            const minigames = ['{% url "game:hangman" %}', '{% url "game:lockpicker" %}', '{% url "game:whackamole" %}'];
+            // Seleziona il minigioco in base al livello (rotazione)
+            const nextGame = minigames[(this.level - 1) % minigames.length];
+            window.location.replace(nextGame);
         },
 
         handleKeydown(e) {
@@ -337,8 +340,8 @@ document.addEventListener('alpine:init', () => {
                     // Implementiamo un "sacchetto" (bag) mescolato per garantire casualità ma equità
                     let bag = sessionStorage.getItem('encounterBag');
                     if (!bag) {
-                        // Crea un nuovo array [0,1,2] e lo mescola
-                        let newBag = [0, 1, 2].sort(() => Math.random() - 0.5);
+                        // Crea un nuovo array [0,0,1,1,2] e lo mescola (0 e 1 compaiono il doppio delle volte di 2)
+                        let newBag = [0, 0, 1, 1, 2].sort(() => Math.random() - 0.5);
                         bag = newBag.join(',');
                     }
                     let bagArray = bag.split(',').map(Number);

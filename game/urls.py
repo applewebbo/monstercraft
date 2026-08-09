@@ -17,4 +17,6 @@ urlpatterns = [
     path("pit_result/", views.pit_result, name="pit_result"),
     path("timing_game/", views.timing_game, name="timing_game"),
     path("rps_game/", views.rps_game, name="rps_game"),
+    path("lockpicker/", views.lockpicker, name="lockpicker"),
+    path("whackamole/", views.whackamole, name="whackamole"),
 ]

@@ -73,9 +73,9 @@
         <h3 x-show="status === 'lost'" style="color: #f44336;">Hai Perso!</h3>
         <h3 x-show="status === 'draw'" style="color: #FFEB3B;">Pareggio! Riprova.</h3>
 
-        <div x-show="status === 'playing'" style="display: flex; gap: 10px; justify-content: center; margin-top: 20px;">
+        <div x-show="status === 'playing'" style="display: flex; flex-direction: row; flex-wrap: nowrap; gap: 10px; justify-content: center; margin-top: 20px; width: 100%;">
             <template x-for="(c, index) in choices" :key="index">
-                <button @click="play(c)" class="btn-option" style="background-color: #333;" :class="{'selected': selectedIndex === index}" x-text="c"></button>
+                <button @click="play(c)" class="btn-option" style="background-color: #333; flex: 1; white-space: nowrap; padding: 10px 5px; font-size: clamp(10px, 2.5vw, 14px);" :class="{'selected': selectedIndex === index}" x-text="c"></button>
             </template>
         </div>
 

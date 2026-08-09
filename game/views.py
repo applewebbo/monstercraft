@@ -514,3 +514,72 @@ def rps_game(request):
         "y": y,
     }
     return render(request, "game/partials/rps_modal.html", context)
+
+
+def lockpicker(request):
+    """
+    Renders the Lock Picker mini-game (Mastermind style) between levels.
+    """
+    level = request.session.get("level", 1)
+    score = request.session.get("score", 0)
+    lives = request.session.get("lives", 3)
+
+    # Difficulty (code length) increases slightly with level
+    if level <= 4:
+        code_length = 3
+        max_attempts = 6
+    elif level <= 10:
+        code_length = 3
+        max_attempts = 5
+    else:
+        code_length = 4
+        max_attempts = 6
+
+    colors = [
+        "#FFEB3B",
+        "#4CAF50",
+        "#f44336",
+        "#03a9f4",
+        "#9C27B0",
+        "#FF9800",
+    ]  # Yellow, Green, Red, Blue, Purple, Orange
+
+    # generate secret code
+    secret_code = [random.choice(colors) for _ in range(code_length)]
+
+    context = {
+        "level": level,
+        "score": score,
+        "lives": lives,
+        "code_length": code_length,
+        "max_attempts": max_attempts,
+        "secret_code": json.dumps(secret_code),
+        "available_colors": json.dumps(colors),
+    }
+
+    return render(request, "game/lockpicker.html", context)
+
+
+def whackamole(request):
+    """
+    Renders the Whack-a-Mole mini-game between levels.
+    """
+    level = request.session.get("level", 1)
+    score = request.session.get("score", 0)
+    lives = request.session.get("lives", 3)
+
+    # Difficulty (speed/number of moles) increases gently with level
+    target_score = 5 + (level // 3) * 2  # Easier target: 5 initially
+    time_limit = 20  # seconds (more time)
+    spawn_rate = max(600, 1200 - (level * 40))  # ms (moles spawn slower)
+
+    context = {
+        "level": level,
+        "score": score,
+        "lives": lives,
+        "target_score": target_score,
+        "time_limit": time_limit,
+        "spawn_rate": spawn_rate,
+    }
+
+    return render(request, "game/whackamole.html", context)

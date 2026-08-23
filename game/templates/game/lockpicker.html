@@ -152,14 +152,14 @@
         <!-- Color Palette -->
         <div class="color-picker" x-show="status === 'playing'">
             <template x-for="(color, index) in availableColors" :key="color">
-                <div class="color-btn" style="display: flex; justify-content: center; align-items: center;" :style="`background-color: ${color}`" @click="setColor(color)">
+                <div class="color-btn" style="display: flex; justify-content: center; align-items: center;" :style="`background-color: ${color}`" @click="setColor(color)" @touchstart.prevent="setColor(color)">
                     <span style="color: #fff; font-size: 14px; text-shadow: 1px 1px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000;" x-text="index + 1"></span>
                 </div>
             </template>
-            <button class="btn-option" style="padding: 10px; font-size: 12px; margin-left: 10px;" @click="submitAttempt()" :disabled="!isRowComplete()">CONFERMA</button>
+            <button class="btn-option" style="padding: 10px; font-size: 12px; margin-left: 10px;" @click="submitAttempt()" @touchstart.prevent="submitAttempt()" :disabled="!isRowComplete()">CONFERMA</button>
         </div>
-        <p x-show="status === 'playing'" style="font-size: 8px; color: #aaa; margin-top: 10px;">
-            (Premi i numeri 1-6 per scegliere i colori, CANC/BACKSPACE per annullare)
+        <p x-show="status === 'playing'" style="font-size: clamp(8px, 1.5vh, 12px); color: #aaa; margin-top: 10px; line-height: 1.5;">
+            (Tocca i colori in sequenza. Su PC puoi usare i numeri 1-6, CANC per annullare)
         </p>
     </div>
 

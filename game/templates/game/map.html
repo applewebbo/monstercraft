@@ -86,7 +86,8 @@
 <div class="game-wrapper"
      x-data="gameSetup({ size: {{ grid_size }}, level: {{ level }}, score: {{ score }}, lives: {{ lives }}, monsterHelps: {{ monster_helps }}, mapData: {{ map_data_json|safe }} })"
      @keydown.window="handleKeydown($event)"
-     style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2vh; height: 100%; width: 100%; max-width: 1200px; margin: 0 auto; box-sizing: border-box;">
+     @touchstart.window="handleTouch($event)"
+     @click.window="handleTouch($event)">
 
     <!-- Logo / Title -->
     <img src="{% static 'game/images/logo.jpg' %}" alt="MonsterCraft Logo" style="max-width: 320px; max-height: 12vh; object-fit: contain;">
@@ -276,6 +277,38 @@ document.addEventListener('alpine:init', () => {
             // Seleziona il minigioco in base al livello (rotazione)
             const nextGame = minigames[(this.level - 1) % minigames.length];
             window.location.replace(nextGame);
+        },
+
+        handleTouch(e) {
+            if (this.isModalOpen) return;
+            if (e.target.closest('button, a')) return;
+
+            let clientX = e.clientX;
+            let clientY = e.clientY;
+
+            if (e.touches && e.touches.length > 0) {
+                clientX = e.touches[0].clientX;
+                clientY = e.touches[0].clientY;
+            } else if (e.type === 'click') {
+                clientX = e.clientX;
+                clientY = e.clientY;
+            } else {
+                return;
+            }
+
+            let cx = window.innerWidth / 2;
+            let cy = window.innerHeight / 2;
+            let dx = clientX - cx;
+            let dy = clientY - cy;
+
+            let simulatedKey = '';
+            if (Math.abs(dx) > Math.abs(dy)) {
+                simulatedKey = dx > 0 ? 'ArrowRight' : 'ArrowLeft';
+            } else {
+                simulatedKey = dy > 0 ? 'ArrowDown' : 'ArrowUp';
+            }
+
+            this.handleKeydown({ key: simulatedKey, preventDefault: () => {} });
         },
 
         handleKeydown(e) {

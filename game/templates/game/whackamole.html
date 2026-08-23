@@ -135,9 +135,9 @@
 
 <div class="whack-container" x-data="whackGame(JSON.parse(document.getElementById('whackamole-config').textContent))" @keydown.window="handleKeydown($event)">
 
-    <h2 style="color: #f44336; text-shadow: 2px 2px 0 #000; text-align: center; font-size: clamp(16px, 3vh, 24px);">SCHIACCIA IL MOSTRO</h2>
+    <h2 x-show="status === 'playing' || status === 'ready'" style="color: #f44336; text-shadow: 2px 2px 0 #000; text-align: center; font-size: clamp(16px, 3vh, 24px);">SCHIACCIA IL MOSTRO</h2>
 
-    <div class="status-panel">
+    <div class="status-panel" x-show="status === 'playing' || status === 'ready'">
         <div class="status-item">
             Tempo:
             <span x-text="timeLeft" :style="timeLeft <= 5 ? 'color: #f44336;' : ''"></span>
@@ -165,15 +165,15 @@
     <div class="overlay" x-show="status === 'ready'" x-cloak>
         <h2 style="color: #FFEB3B; text-align: center; text-shadow: 2px 2px 0 #000;">PREPARATI!</h2>
         <p style="margin: 20px 0; text-align:center; line-height: 1.5;">Schiaccia almeno <strong x-text="targetScore"></strong> mostri<br>in <strong x-text="timeLimit"></strong> secondi!</p>
-        <button class="btn-option" style="background-color: #4CAF50;" @click="startGame()">INIZIA</button>
+        <button class="btn-option bg-success" @click="startGame()">INIZIA</button>
     </div>
 
-    <!-- Result Overlay -->
-    <div class="overlay" x-show="status === 'won' || status === 'lost'" x-cloak>
-        <h2 x-show="status === 'won'" style="color: #4CAF50; text-shadow: 2px 2px 0 #000; text-align: center;">VITTORIA! (+50 pt)</h2>
-        <h2 x-show="status === 'lost'" style="color: #f44336; text-shadow: 2px 2px 0 #000; text-align: center;">TEMPO SCADUTO... (-1 VITA)</h2>
+    <!-- Result Area -->
+    <div x-show="status === 'won' || status === 'lost'" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 20px; min-height: 50vh;" x-cloak>
+        <h2 x-show="status === 'won'" class="text-success">VITTORIA! (+50 pt)</h2>
+        <h2 x-show="status === 'lost'" class="text-danger">TEMPO SCADUTO... (-1 VITA)</h2>
 
-        <button type="button" @click="proceedToLevel()" class="btn-option" style="margin-top: 20px; background-color: #03a9f4;">
+        <button type="button" @click="proceedToLevel()" class="btn-option" style="background-color: #03a9f4;">
             AVANTI
         </button>
     </div>

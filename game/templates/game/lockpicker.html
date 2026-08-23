@@ -119,10 +119,10 @@
 
 <div class="lockpicker-container" x-data="lockpickerGame(JSON.parse(document.getElementById('lockpicker-config').textContent))" @keydown.window="handleKeydown($event)">
 
-    <img src="{% static 'game/images/gatekeeper.jpg' %}" alt="Serratura" style="max-height: 15vh; max-width: 15vh; aspect-ratio: 1; border-radius: 8px; border: 4px solid #fff; box-shadow: 4px 4px 0px #9C27B0; image-rendering: pixelated;">
-    <h2 style="color: #9C27B0; text-shadow: 2px 2px 0 #000; text-align: center; font-size: clamp(16px, 3vh, 24px);">SBLOCCA IL FORZIERE</h2>
+    <img x-show="status === 'playing'" src="{% static 'game/images/gatekeeper.jpg' %}" alt="Serratura" style="max-height: 15vh; max-width: 15vh; aspect-ratio: 1; border-radius: 8px; border: 4px solid #fff; box-shadow: 4px 4px 0px #9C27B0; image-rendering: pixelated;">
+    <h2 x-show="status === 'playing'" style="color: #9C27B0; text-shadow: 2px 2px 0 #000; text-align: center; font-size: clamp(16px, 3vh, 24px);">SBLOCCA IL FORZIERE</h2>
 
-    <div class="status-panel">
+    <div class="status-panel" x-show="status === 'playing'">
         <div class="attempts-left">
             Tentativi Rimasti: <span x-text="maxAttempts - currentAttemptIndex"></span>
         </div>
@@ -165,7 +165,7 @@
     </div>
 
     <!-- Result Area -->
-    <div x-show="status !== 'playing'" style="text-align: center; margin-top: 20px;" x-cloak>
+    <div x-show="status !== 'playing'" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 20px; min-height: 50vh;" x-cloak>
         <h2 x-show="status === 'won'" style="color: #4CAF50;">FORZIERE APERTO! (+50 pt)</h2>
         <h2 x-show="status === 'lost'" style="color: #f44336;">SERRATURA ROTTA... (-1 VITA)</h2>
         <div x-show="status === 'lost'" style="margin-top:10px;">

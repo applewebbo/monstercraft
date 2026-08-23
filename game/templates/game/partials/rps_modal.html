@@ -54,35 +54,31 @@
         }
      }"
      @keydown.window="handleKeydown($event)">
-    <style>
-        .btn-option.selected {
-            background-color: #4CAF50 !important;
-        }
-    </style>
-    <div class="modal-content" style="border-radius: 8px;">
+
+    <div class="modal-content">
         <h2>Scontro Elementale!</h2>
         <p x-show="status === 'playing'">Scegli l'elemento per attaccare il mostro!</p>
-        <p x-show="status === 'playing'" style="font-size: 0.9em; color: #aaa;">Acqua spegne Fuoco, Fuoco brucia Pianta, Pianta assorbe Acqua.</p>
+        <p x-show="status === 'playing'" class="text-small">Acqua spegne Fuoco, Fuoco brucia Pianta, Pianta assorbe Acqua.</p>
 
-        <div x-show="status !== 'playing'" style="margin: 20px 0;">
-            <p style="font-size: 1.2em;">Tu: <span x-text="playerChoice"></span></p>
-            <p style="font-size: 1.2em;">Mostro: <span x-text="monsterChoice"></span></p>
+        <div x-show="status !== 'playing'">
+            <p>Tu: <span x-text="playerChoice"></span></p>
+            <p>Mostro: <span x-text="monsterChoice"></span></p>
         </div>
 
-        <h3 x-show="status === 'won'" style="color: #4CAF50;">Hai Vinto!</h3>
-        <h3 x-show="status === 'lost'" style="color: #f44336;">Hai Perso!</h3>
-        <h3 x-show="status === 'draw'" style="color: #FFEB3B;">Pareggio! Riprova.</h3>
+        <h3 x-show="status === 'won'" class="text-success">Hai Vinto!</h3>
+        <h3 x-show="status === 'lost'" class="text-danger">Hai Perso!</h3>
+        <h3 x-show="status === 'draw'" class="text-warning">Pareggio! Riprova.</h3>
 
-        <div x-show="status === 'playing'" style="display: flex; flex-direction: row; flex-wrap: nowrap; gap: 10px; justify-content: center; margin-top: 20px; width: 100%;">
+        <div x-show="status === 'playing'" class="btn-group-row">
             <template x-for="(c, index) in choices" :key="index">
-                <button @click="play(c)" class="btn-option" style="background-color: #333; flex: 1; white-space: nowrap; padding: 10px 5px; font-size: clamp(10px, 2.5vw, 14px);" :class="{'selected': selectedIndex === index}" x-text="c"></button>
+                <button @click="play(c)" class="btn-option bg-dark" :class="{'selected': selectedIndex === index}" x-text="c"></button>
             </template>
         </div>
 
-        <div style="margin-top: 20px;">
-            <button x-show="status === 'won'" onclick="resolveEncounter(true, {{ x }}, {{ y }})" class="btn-option" style="background-color: #4CAF50;">Continua</button>
-            <button x-show="status === 'lost'" onclick="resolveEncounter(false, {{ x }}, {{ y }})" class="btn-option" style="background-color: #f44336;">Ritirati</button>
-            <button x-show="status === 'draw'" @click="reset()" class="btn-option" style="background-color: #FF9800;">Gioca Ancora</button>
+        <div class="btn-group-row">
+            <button x-show="status === 'won'" onclick="resolveEncounter(true, {{ x }}, {{ y }})" class="btn-option bg-success">Continua</button>
+            <button x-show="status === 'lost'" onclick="resolveEncounter(false, {{ x }}, {{ y }})" class="btn-option bg-danger">Ritirati</button>
+            <button x-show="status === 'draw'" @click="reset()" class="btn-option bg-warning">Gioca Ancora</button>
         </div>
     </div>
 </div>

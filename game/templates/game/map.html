@@ -65,18 +65,7 @@
     .wall { background-color: #555; border: 1px solid #444; }
 
     /* Modale HTMX */
-    .modal-overlay {
-        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-        background: rgba(0, 0, 0, 0.8);
-        display: flex; justify-content: center; align-items: center;
-        z-index: 1000;
-    }
-    .modal-content {
-        background: #222; border: 4px solid #fff; padding: 30px;
-        text-align: center; max-width: 500px; box-shadow: 8px 8px 0px #555;
-        border-radius: 8px;
-    }
-    .question-text { font-size: 16px; margin: 20px 0; line-height: 1.5; }
+    .question-text { font-size: clamp(10px, 2.5vw, 16px); margin: 20px 0; line-height: 1.5; }
     .options { display: flex; flex-direction: column; gap: 10px; }
 
 </style>
@@ -279,7 +268,12 @@ document.addEventListener('alpine:init', () => {
             window.location.replace(nextGame);
         },
 
+        lastTouchTime: 0,
         handleTouch(e) {
+            let now = Date.now();
+            if (now - this.lastTouchTime < 300) return; // Debounce to prevent double move
+            this.lastTouchTime = now;
+
             if (this.isModalOpen) return;
             if (e.target.closest('button, a')) return;
 

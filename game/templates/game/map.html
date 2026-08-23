@@ -30,9 +30,13 @@
     .grid-wrapper {
         border: 4px solid #fff;
         background-color: #111;
-        box-shadow: 8px 8px 0px #555;
+        box-shadow: 4px 4px 0px #555;
         padding: 4px;
         border-radius: 8px;
+        width: 90vw;
+        max-width: min(600px, 60vh);
+        aspect-ratio: 1;
+        box-sizing: border-box;
     }
 
     .grid {
@@ -41,25 +45,24 @@
         background-color: #333;
         border-radius: 4px;
         overflow: hidden;
+        width: 100%;
+        height: 100%;
     }
 
     .cell {
-        width: 30px;
-        height: 30px;
         background-color: #222;
         display: flex;
         justify-content: center;
         align-items: center;
-        font-size: 20px;
         transition: background-color 0.1s;
         border-radius: 2px;
+        overflow: hidden;
     }
 
-    /* Responsive cell sizes */
-    .grid[data-size="5"] .cell { width: min(8vh, 50px); height: min(8vh, 50px); font-size: min(5vh, 30px); }
-    .grid[data-size="7"] .cell { width: min(6vh, 45px); height: min(6vh, 45px); font-size: min(4vh, 26px); }
-    .grid[data-size="9"] .cell { width: min(5vh, 40px); height: min(5vh, 40px); font-size: min(3vh, 24px); }
-    .grid[data-size="25"] .cell { width: min(2vh, 18px); height: min(2vh, 18px); font-size: min(1.5vh, 12px); }
+    .cell span {
+        /* Use viewport units for dynamic scaling across all levels */
+        font-size: min(calc(60vw / var(--grid-size, 5)), calc(60vh / var(--grid-size, 5)), 30px);
+    }
 
     .player { background-color: #4CAF50; }
     .wall { background-color: #555; border: 1px solid #444; }
@@ -85,7 +88,7 @@
     <div class="game-container" style="display: flex; flex-direction: column; align-items: center; gap: 1vh;">
 
         <div class="grid-wrapper">
-            <div class="grid" :data-size="size" :style="`grid-template-columns: repeat(${size}, 1fr);`">
+            <div class="grid" :data-size="size" :style="`--grid-size: ${size}; grid-template-columns: repeat(${size}, 1fr); grid-template-rows: repeat(${size}, 1fr);`">
                 <template x-for="y in size" :key="'row-'+y">
                     <template x-for="x in size" :key="'col-'+x">
                         <div class="cell"

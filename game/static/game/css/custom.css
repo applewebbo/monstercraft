@@ -103,3 +103,10 @@
 .btn-option.selected {
     background-color: #4CAF50 !important;
 }
+
+.options {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    pointer-events: auto;
+}

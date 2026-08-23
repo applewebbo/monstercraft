@@ -69,7 +69,7 @@
             <div :style="`position: absolute; left: ${cursorPos}%; width: 4px; height: 100%; background-color: #fff; box-shadow: 0 0 5px #fff; transform: translateX(-50%); z-index: 10;`"></div>
         </div>
 
-        <button x-show="status === 'playing'" @click="hit()" class="btn-option bg-warning">COLPISCI!</button>
+        <button x-show="status === 'playing'" @click="hit()" @touchstart.prevent="hit()" class="btn-option bg-warning">COLPISCI!</button>
 
         <button x-show="status === 'won'" onclick="resolveEncounter(true, {{ x }}, {{ y }})" class="btn-option bg-success">Continua</button>
         <button x-show="status === 'lost'" onclick="resolveEncounter(false, {{ x }}, {{ y }})" class="btn-option bg-danger">Ritirati</button>

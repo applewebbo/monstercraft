@@ -71,7 +71,7 @@
 
         <div x-show="status === 'playing'" class="btn-group-row">
             <template x-for="(c, index) in choices" :key="index">
-                <button @click="play(c)" class="btn-option bg-dark" :class="{'selected': selectedIndex === index}" x-text="c"></button>
+                <button @click="play(c)" @touchstart.prevent="play(c)" class="btn-option bg-dark" :class="{'selected': selectedIndex === index}" x-text="c"></button>
             </template>
         </div>
 

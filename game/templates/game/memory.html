@@ -1,0 +1,239 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block extra_head %}
+<style>
+    .memory-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 20px;
+        width: 100%;
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 20px;
+        box-sizing: border-box;
+    }
+
+    .memory-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 10px;
+        width: 100%;
+        max-width: 600px;
+        perspective: 1000px;
+    }
+
+    .memory-card {
+        aspect-ratio: 1;
+        background-color: transparent;
+        cursor: pointer;
+        position: relative;
+        transform-style: preserve-3d;
+        transition: transform 0.5s;
+        border-radius: 8px;
+    }
+
+    .memory-card.flipped {
+        transform: rotateY(180deg);
+    }
+
+    .memory-card.matched {
+        visibility: hidden;
+        opacity: 0;
+        transition: visibility 0s 0.5s, opacity 0.5s linear;
+    }
+
+    .card-face {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        backface-visibility: hidden;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        border-radius: 8px;
+        border: 2px solid #fff;
+        box-shadow: 2px 2px 0px #555;
+        font-size: clamp(12px, 3vw, 20px);
+        text-align: center;
+        padding: 5px;
+        box-sizing: border-box;
+    }
+
+    .card-front {
+        background-color: #2196F3;
+        transform: rotateY(180deg);
+        color: white;
+    }
+
+    .card-back {
+        background-color: #FF9800;
+        background-image: repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(255,255,255,0.1) 10px, rgba(255,255,255,0.1) 20px);
+    }
+
+    @media (max-width: 400px) {
+        .memory-grid {
+            grid-template-columns: repeat(4, 1fr);
+            gap: 5px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+{% include 'game/partials/hyperspace.html' %}
+<script id="memory-config" type="application/json">
+{
+    "cards": {{ cards_json|safe }},
+    "timeLimit": {{ time_limit }},
+    "level": {{ level }},
+    "score": {{ score }},
+    "lives": {{ lives }}
+}
+</script>
+
+<div class="memory-container" x-data="memoryGame(JSON.parse(document.getElementById('memory-config').textContent))">
+
+    <h2 x-show="status === 'playing' || status === 'ready'" style="color: #2196F3; text-shadow: 2px 2px 0 #000; text-align: center; font-size: clamp(16px, 3vh, 24px);">MEMORY MATCHING</h2>
+
+    <div class="status-panel" x-show="status === 'playing' || status === 'ready'">
+        <div class="status-item">
+            Tempo:
+            <span x-text="timeLeft" :style="timeLeft <= 10 ? 'color: #f44336;' : ''"></span>
+        </div>
+        <div class="status-item">
+            Coppie:
+            <span><span x-text="matchedPairs"></span>/<span x-text="totalPairs"></span></span>
+        </div>
+    </div>
+
+    <!-- Start Overlay -->
+    <div class="overlay" x-show="status === 'ready'" x-cloak style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.85); display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 100;">
+        <h2 style="color: #FFEB3B; text-align: center; text-shadow: 2px 2px 0 #000;">ABBINAMENTI</h2>
+        <p style="margin: 20px 0; text-align:center; line-height: 1.5;">Trova tutte le coppie logiche!<br>Hai <strong x-text="timeLimit"></strong> secondi.</p>
+        <button class="btn-option bg-success" @click="startGame()">INIZIA</button>
+    </div>
+
+    <div class="memory-grid" x-show="status === 'playing' || status === 'ready'">
+        <template x-for="(card, index) in cards" :key="index">
+            <div class="memory-card" :class="{'flipped': card.flipped, 'matched': card.matched}" @click="flipCard(index)" @touchstart.prevent="flipCard(index)">
+                <div class="card-face card-front" x-text="card.text"></div>
+                <div class="card-face card-back"></div>
+            </div>
+        </template>
+    </div>
+
+    <!-- Result Area -->
+    <div x-show="status === 'won' || status === 'lost'" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 20px; min-height: 50vh;" x-cloak>
+        <h2 x-show="status === 'won'" class="text-success">OTTIMO LAVORO! (+50 pt)</h2>
+        <h2 x-show="status === 'lost'" class="text-danger">TEMPO SCADUTO... (-1 VITA)</h2>
+
+        <button type="button" @click="proceedToLevel()" class="btn-option" style="background-color: #03a9f4;">
+            AVANTI
+        </button>
+    </div>
+
+</div>
+
+<script>
+document.addEventListener('alpine:init', () => {
+    Alpine.data('memoryGame', (config) => ({
+        cards: config.cards.map(c => ({...c, flipped: false, matched: false})),
+        timeLimit: config.timeLimit,
+        level: config.level,
+        score: config.score,
+        lives: config.lives,
+
+        timeLeft: config.timeLimit,
+        totalPairs: config.cards.length / 2,
+        matchedPairs: 0,
+        status: 'ready', // ready, playing, won, lost
+        timerInterval: null,
+
+        flippedCards: [],
+        lockBoard: false,
+
+        startGame() {
+            this.status = 'playing';
+            this.timerInterval = setInterval(() => {
+                this.timeLeft--;
+                if (this.timeLeft <= 0) {
+                    this.endGame(false);
+                }
+            }, 1000);
+        },
+
+        flipCard(index) {
+            if (this.status !== 'playing') return;
+            if (this.lockBoard) return;
+            let card = this.cards[index];
+            if (card.flipped || card.matched) return;
+
+            card.flipped = true;
+            this.flippedCards.push({index: index, card: card});
+
+            if (this.flippedCards.length === 2) {
+                this.checkForMatch();
+            }
+        },
+
+        checkForMatch() {
+            this.lockBoard = true;
+            let card1 = this.flippedCards[0];
+            let card2 = this.flippedCards[1];
+
+            if (card1.card.pair_id === card2.card.pair_id) {
+                // Match
+                setTimeout(() => {
+                    this.cards[card1.index].matched = true;
+                    this.cards[card2.index].matched = true;
+                    this.matchedPairs++;
+                    this.resetBoard();
+
+                    if (this.matchedPairs === this.totalPairs) {
+                        this.endGame(true);
+                    }
+                }, 500);
+            } else {
+                // No match
+                setTimeout(() => {
+                    this.cards[card1.index].flipped = false;
+                    this.cards[card2.index].flipped = false;
+                    this.resetBoard();
+                }, 1000);
+            }
+        },
+
+        resetBoard() {
+            this.flippedCards = [];
+            this.lockBoard = false;
+        },
+
+        endGame(won) {
+            clearInterval(this.timerInterval);
+            this.status = won ? 'won' : 'lost';
+
+            // Aggiorna server in background
+            fetch('{% url "game:update_state" %}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token }}'
+                },
+                body: JSON.stringify({
+                    score: won ? this.score + 50 : this.score,
+                    lives: won ? this.lives : this.lives - 1,
+                    level: this.level
+                })
+            });
+        },
+
+        proceedToLevel() {
+            // Continua alla mappa
+            window.location.href = "{% url 'game:start' %}";
+        }
+    }));
+});
+</script>
+{% endblock %}

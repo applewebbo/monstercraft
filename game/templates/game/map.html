@@ -268,7 +268,7 @@ document.addEventListener('alpine:init', () => {
                     monster_helps: this.monsterHelps
                 })
             });
-            const minigames = ['{% url "game:hangman" %}', '{% url "game:lockpicker" %}', '{% url "game:whackamole" %}'];
+            const minigames = ['{% url "game:memory" %}', '{% url "game:dropgame" %}', '{% url "game:lockpicker" %}', '{% url "game:whackamole" %}'];
             // Seleziona il minigioco in base al livello (rotazione)
             const nextGame = minigames[(this.level - 1) % minigames.length];
             window.location.replace(nextGame);

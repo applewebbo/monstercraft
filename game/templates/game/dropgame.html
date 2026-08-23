@@ -1,0 +1,279 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block extra_head %}
+<style>
+    .dropgame-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        width: 100%;
+        height: 100vh;
+        overflow: hidden;
+        position: relative;
+    }
+
+    .game-area {
+        flex: 1;
+        width: 100%;
+        max-width: 600px;
+        position: relative;
+        border: 2px solid #fff;
+        background: rgba(0,0,0,0.5);
+    }
+
+    .falling-item {
+        position: absolute;
+        padding: 10px 15px;
+        background-color: #FFC107;
+        color: #000;
+        font-weight: bold;
+        border-radius: 8px;
+        box-shadow: 2px 2px 0px #fff;
+        transform: translateX(-50%);
+        font-size: clamp(12px, 3vw, 18px);
+        white-space: nowrap;
+    }
+
+    .buckets {
+        display: flex;
+        width: 100%;
+        max-width: 600px;
+        height: 15vh;
+        min-height: 80px;
+    }
+
+    .bucket {
+        flex: 1;
+        border: 4px solid #fff;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        font-size: clamp(14px, 4vw, 20px);
+        font-weight: bold;
+        color: white;
+        text-align: center;
+        cursor: pointer;
+        user-select: none;
+    }
+
+    .bucket-left {
+        background-color: #E91E63;
+        border-right: 2px solid #fff;
+    }
+    .bucket-right {
+        background-color: #00BCD4;
+        border-left: 2px solid #fff;
+    }
+
+    .bucket:active {
+        filter: brightness(1.2);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+{% include 'game/partials/hyperspace.html' %}
+<script id="dropgame-config" type="application/json">
+{
+    "categories": {{ categories_json|safe }},
+    "items": {{ items_json|safe }},
+    "targetScore": {{ target_score }},
+    "level": {{ level }},
+    "score": {{ score }},
+    "lives": {{ lives }}
+}
+</script>
+
+<div class="dropgame-container" x-data="dropGame(JSON.parse(document.getElementById('dropgame-config').textContent))" @keydown.window="handleKeydown($event)">
+    <h2 x-show="status === 'playing' || status === 'ready'" style="color: #E91E63; text-shadow: 2px 2px 0 #000; text-align: center; font-size: clamp(16px, 3vh, 24px); margin: 10px 0;">SEPARA I CONCETTI</h2>
+
+    <div class="status-panel" x-show="status === 'playing' || status === 'ready'" style="margin-bottom: 10px;">
+        <div class="status-item">
+            Vite:
+            <span x-text="gameLives" :style="gameLives <= 1 ? 'color: #f44336;' : ''"></span>
+        </div>
+        <div class="status-item">
+            Punti:
+            <span><span x-text="currentScore"></span>/<span x-text="targetScore"></span></span>
+        </div>
+    </div>
+
+    <!-- Start Overlay -->
+    <div class="overlay" x-show="status === 'ready'" x-cloak style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.85); display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 100;">
+        <h2 style="color: #FFEB3B; text-align: center; text-shadow: 2px 2px 0 #000;">SMISTAMENTO</h2>
+        <p style="margin: 20px 0; text-align:center; line-height: 1.5;">Tocca il cesto corretto prima che<br>la parola tocchi terra!</p>
+        <button class="btn-option bg-success" @click="startGame()">INIZIA</button>
+    </div>
+
+    <div class="game-area" x-show="status === 'playing' || status === 'ready'" x-ref="gameArea">
+        <template x-for="item in activeItems" :key="item.id">
+            <div class="falling-item" :style="`left: ${item.x}%; top: ${item.y}px;`" x-text="item.name"></div>
+        </template>
+    </div>
+
+    <div class="buckets" x-show="status === 'playing' || status === 'ready'">
+        <div class="bucket bucket-left" @click="catchItem(0)" @touchstart.prevent="catchItem(0)" x-text="categories[0]"></div>
+        <div class="bucket bucket-right" @click="catchItem(1)" @touchstart.prevent="catchItem(1)" x-text="categories[1]"></div>
+    </div>
+    <p x-show="status === 'playing'" style="font-size: clamp(10px, 2vh, 12px); color: #aaa; margin-top: 5px;">(Tocca i cesti. Su PC puoi usare Freccia Sinistra / Destra)</p>
+
+    <!-- Result Area -->
+    <div x-show="status === 'won' || status === 'lost'" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 20px; min-height: 50vh;" x-cloak>
+        <h2 x-show="status === 'won'" class="text-success">OTTIMO! (+50 pt)</h2>
+        <h2 x-show="status === 'lost'" class="text-danger">TROPPI ERRORI... (-1 VITA)</h2>
+
+        <button type="button" @click="proceedToLevel()" class="btn-option" style="background-color: #03a9f4;">
+            AVANTI
+        </button>
+    </div>
+</div>
+
+<script>
+document.addEventListener('alpine:init', () => {
+    Alpine.data('dropGame', (config) => ({
+        categories: config.categories,
+        items: config.items,
+        targetScore: config.targetScore,
+        level: config.level,
+        score: config.score,
+        lives: config.lives,
+
+        currentScore: 0,
+        gameLives: 3,
+        status: 'ready', // ready, playing, won, lost
+        activeItems: [],
+        itemIdCounter: 0,
+
+        gameLoop: null,
+        spawnLoop: null,
+        fallSpeed: 2 + (config.level * 0.2), // Speed increases with level
+        spawnRate: Math.max(800, 2000 - (config.level * 100)),
+        lastTime: 0,
+
+        startGame() {
+            this.status = 'playing';
+            this.activeItems = [];
+
+            this.spawnLoop = setInterval(() => {
+                this.spawnItem();
+            }, this.spawnRate);
+
+            this.lastTime = performance.now();
+            this.gameLoop = requestAnimationFrame(this.update.bind(this));
+        },
+
+        spawnItem() {
+            if (this.status !== 'playing') return;
+            // Limit on-screen items
+            if (this.activeItems.length >= 3) return;
+
+            let itemData = this.items[Math.floor(Math.random() * this.items.length)];
+            this.activeItems.push({
+                id: this.itemIdCounter++,
+                name: itemData.name,
+                category: itemData.category,
+                x: 20 + Math.random() * 60, // random x between 20% and 80%
+                y: -30
+            });
+        },
+
+        update(time) {
+            if (this.status !== 'playing') return;
+
+            let deltaTime = time - this.lastTime;
+            this.lastTime = time;
+
+            let gameAreaHeight = this.$refs.gameArea ? this.$refs.gameArea.clientHeight : 500;
+
+            for (let i = this.activeItems.length - 1; i >= 0; i--) {
+                let item = this.activeItems[i];
+                // fallSpeed is pixels per frame (roughly at 60fps), let's make it time based
+                item.y += this.fallSpeed * (deltaTime / 16);
+
+                if (item.y > gameAreaHeight) {
+                    // Item dropped
+                    this.activeItems.splice(i, 1);
+                    this.takeDamage();
+                }
+            }
+
+            if (this.status === 'playing') {
+                this.gameLoop = requestAnimationFrame(this.update.bind(this));
+            }
+        },
+
+        catchItem(bucketIndex) {
+            if (this.status !== 'playing' || this.activeItems.length === 0) return;
+
+            // Find the lowest item
+            let lowestItemIndex = 0;
+            let lowestY = this.activeItems[0].y;
+            for (let i = 1; i < this.activeItems.length; i++) {
+                if (this.activeItems[i].y > lowestY) {
+                    lowestY = this.activeItems[i].y;
+                    lowestItemIndex = i;
+                }
+            }
+
+            let targetCategory = this.categories[bucketIndex];
+            let item = this.activeItems[lowestItemIndex];
+
+            if (item.category === targetCategory) {
+                // Correct!
+                this.currentScore++;
+                if (this.currentScore >= this.targetScore) {
+                    this.endGame(true);
+                }
+            } else {
+                // Wrong!
+                this.takeDamage();
+            }
+
+            this.activeItems.splice(lowestItemIndex, 1);
+        },
+
+        takeDamage() {
+            this.gameLives--;
+            if (this.gameLives <= 0) {
+                this.endGame(false);
+            }
+        },
+
+        handleKeydown(e) {
+            if (this.status !== 'playing') return;
+            if (e.key === 'ArrowLeft') {
+                e.preventDefault();
+                this.catchItem(0);
+            } else if (e.key === 'ArrowRight') {
+                e.preventDefault();
+                this.catchItem(1);
+            }
+        },
+
+        endGame(won) {
+            this.status = won ? 'won' : 'lost';
+            clearInterval(this.spawnLoop);
+            if (this.gameLoop) cancelAnimationFrame(this.gameLoop);
+
+            fetch('{% url "game:update_state" %}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token }}'
+                },
+                body: JSON.stringify({
+                    score: won ? this.score + 50 : this.score,
+                    lives: won ? this.lives : this.lives - 1,
+                    level: this.level
+                })
+            });
+        },
+
+        proceedToLevel() {
+            window.location.href = "{% url 'game:start' %}";
+        }
+    }));
+});
+</script>
+{% endblock %}

@@ -4,7 +4,7 @@ import random
 from django.http import HttpResponseBadRequest, JsonResponse
 from django.shortcuts import redirect, render
 
-from .models import HangmanWord, Question, Score
+from .models import Question, Score
 
 
 def start(request):
@@ -319,91 +319,186 @@ def leaderboard(request):
     return render(request, "game/leaderboard.html", {"scores": scores})
 
 
-def hangman(request):
-    """
-    Renders the Hangman mini-game between levels.
-    """
+def memory(request):
+    import json
+    import random
+
     level = request.session.get("level", 1)
     score = request.session.get("score", 0)
     lives = request.session.get("lives", 3)
-
-    # Difficoltà e tentativi decrescenti, curva ammorbidita
-    if level <= 4:
-        difficulty = 1
-        max_attempts = 7
-    elif level <= 8:
-        difficulty = 1
-        max_attempts = 6
-    elif level <= 12:
-        difficulty = 2
-        max_attempts = 5
-    elif level <= 16:
-        difficulty = 2
-        max_attempts = 4
-    else:
-        difficulty = 3
-        max_attempts = 3
-
     age_group = request.session.get("age_group", "9-12")
-    asked_words = request.session.get("asked_words", [])
 
-    word_obj = (
-        HangmanWord.objects.filter(age_group=age_group, difficulty=difficulty)
-        .exclude(id__in=asked_words)
-        .order_by("?")
-        .first()
-    )
+    if age_group == "5-8":
+        if level <= 3:
+            pairs = [
+                ("1 + 1", "2"),
+                ("2 + 2", "4"),
+                ("3 + 1", "4"),
+                ("5 + 0", "5"),
+                ("1 + 3", "4"),
+                ("2 + 1", "3"),
+                ("3 + 3", "6"),
+                ("4 + 4", "8"),
+            ]
+        elif level <= 7:
+            pairs = [
+                ("5 + 5", "10"),
+                ("6 + 4", "10"),
+                ("7 + 2", "9"),
+                ("10 - 2", "8"),
+                ("8 - 3", "5"),
+                ("9 - 1", "8"),
+                ("4 + 5", "9"),
+                ("6 + 6", "12"),
+            ]
+        else:
+            pairs = [
+                ("2 x 2", "4"),
+                ("3 x 2", "6"),
+                ("10 - 5", "5"),
+                ("12 - 4", "8"),
+                ("4 x 2", "8"),
+                ("5 x 2", "10"),
+                ("6 x 2", "12"),
+                ("7 x 2", "14"),
+            ]
+    elif age_group == "9-12":
+        if level <= 3:
+            pairs = [
+                ("3 x 3", "9"),
+                ("4 x 4", "16"),
+                ("5 x 5", "25"),
+                ("6 x 6", "36"),
+                ("7 x 7", "49"),
+                ("8 x 8", "64"),
+                ("9 x 9", "81"),
+                ("10 x 10", "100"),
+            ]
+        elif level <= 7:
+            pairs = [
+                ("Capitale Italia", "Roma"),
+                ("Capitale Francia", "Parigi"),
+                ("Capitale UK", "Londra"),
+                ("Capitale Spagna", "Madrid"),
+                ("Capitale Germania", "Berlino"),
+                ("Capitale Giappone", "Tokyo"),
+                ("Capitale Egitto", "Il Cairo"),
+                ("Capitale USA", "Washington"),
+            ]
+        else:
+            pairs = [
+                ("12 x 12", "144"),
+                ("15 x 3", "45"),
+                ("100 / 4", "25"),
+                ("50 x 2", "100"),
+                ("75 / 3", "25"),
+                ("90 / 2", "45"),
+                ("11 x 11", "121"),
+                ("20 x 5", "100"),
+            ]
+    else:
+        if level <= 3:
+            pairs = [
+                ("2³", "8"),
+                ("3²", "9"),
+                ("4²", "16"),
+                ("5³", "125"),
+                ("√64", "8"),
+                ("√81", "9"),
+                ("√100", "10"),
+                ("2⁴", "16"),
+            ]
+        elif level <= 7:
+            pairs = [
+                ("H2O", "Acqua"),
+                ("CO2", "Anidride Carbonica"),
+                ("O2", "Ossigeno"),
+                ("NaCl", "Sale da cucina"),
+                ("Au", "Oro"),
+                ("Ag", "Argento"),
+                ("Fe", "Ferro"),
+                ("C", "Carbonio"),
+            ]
+        else:
+            pairs = [
+                ("Prima Guerra Mondiale", "1914"),
+                ("Seconda Guerra Mondiale", "1939"),
+                ("Scoperta America", "1492"),
+                ("Unità d'Italia", "1861"),
+                ("Caduta Muro Berlino", "1989"),
+                ("Rivoluzione Francese", "1789"),
+                ("Sbarco sulla Luna", "1969"),
+                ("Caduta Impero Romano", "476"),
+            ]
 
-    if not word_obj:
-        word_obj = (
-            HangmanWord.objects.filter(age_group=age_group)
-            .exclude(id__in=asked_words)
-            .order_by("?")
-            .first()
-        )
+    num_pairs = min(4 + (level // 3), 8)
+    selected_pairs = random.sample(pairs, num_pairs)
 
-    if not word_obj:
-        word_obj = HangmanWord.objects.exclude(id__in=asked_words).order_by("?").first()
+    cards = []
+    for i, (q, a) in enumerate(selected_pairs):
+        cards.append({"id": i, "text": q, "pair_id": i})
+        cards.append({"id": i + 100, "text": a, "pair_id": i})
 
-    # Se finite tutte le parole, resetta l'elenco e ripesca
-    if not word_obj:
-        asked_words = []
-        word_obj = HangmanWord.objects.filter(age_group=age_group).order_by("?").first()
-        if not word_obj:
-            word_obj = HangmanWord.objects.order_by("?").first()
-
-    # Se proprio non ci sono parole nel DB, ne usiamo una di default
-    if not word_obj:
-
-        class DefaultWord:
-            id = 0
-            word = "MONSTER"
-            hint = "Una creatura spaventosa"
-
-        word_obj = DefaultWord()
-
-    if getattr(word_obj, "id", 0) != 0:
-        asked_words.append(word_obj.id)
-        request.session["asked_words"] = asked_words
-        request.session.modified = True
-
-    word = word_obj.word.upper()
-
-    # Scegliamo un paio di lettere da rivelare (circa 25% della parola)
-    num_revealed = max(1, len(word) // 4)
-    revealed_letters = list(set(random.sample(word, num_revealed)))
+    random.shuffle(cards)
 
     context = {
         "level": level,
         "score": score,
         "lives": lives,
-        "word": word,
-        "hint": word_obj.hint,
-        "revealed_letters": json.dumps(revealed_letters),
-        "max_attempts": max_attempts,
+        "cards_json": json.dumps(cards),
+        "time_limit": 60 + (level * 5),
     }
+    return render(request, "game/memory.html", context)
 
-    return render(request, "game/hangman.html", context)
+
+def dropgame(request):
+    import json
+
+    level = request.session.get("level", 1)
+    score = request.session.get("score", 0)
+    lives = request.session.get("lives", 3)
+    age_group = request.session.get("age_group", "9-12")
+
+    if age_group == "5-8":
+        categories = ["Vocali", "Consonanti"]
+        items = [
+            {"name": "A", "category": "Vocali"},
+            {"name": "E", "category": "Vocali"},
+            {"name": "I", "category": "Vocali"},
+            {"name": "B", "category": "Consonanti"},
+            {"name": "F", "category": "Consonanti"},
+            {"name": "Z", "category": "Consonanti"},
+        ]
+    elif age_group == "9-12":
+        categories = ["Pari", "Dispari"]
+        items = [
+            {"name": "24", "category": "Pari"},
+            {"name": "100", "category": "Pari"},
+            {"name": "8", "category": "Pari"},
+            {"name": "13", "category": "Dispari"},
+            {"name": "27", "category": "Dispari"},
+            {"name": "99", "category": "Dispari"},
+        ]
+    else:
+        categories = ["Metalli", "Non Metalli"]
+        items = [
+            {"name": "Ferro", "category": "Metalli"},
+            {"name": "Rame", "category": "Metalli"},
+            {"name": "Oro", "category": "Metalli"},
+            {"name": "Ossigeno", "category": "Non Metalli"},
+            {"name": "Carbonio", "category": "Non Metalli"},
+            {"name": "Cloro", "category": "Non Metalli"},
+        ]
+
+    context = {
+        "level": level,
+        "score": score,
+        "lives": lives,
+        "categories_json": json.dumps(categories),
+        "items_json": json.dumps(items),
+        "target_score": 5 + (level // 2),
+    }
+    return render(request, "game/dropgame.html", context)
 
 
 def update_state(request):

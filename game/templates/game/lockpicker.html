@@ -104,6 +104,7 @@
 {% endblock %}
 
 {% block content %}
+{% include 'game/partials/hyperspace.html' %}
 <script id="lockpicker-config" type="application/json">
 {
     "secretCode": {{ secret_code|safe }},

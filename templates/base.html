@@ -59,63 +59,6 @@
         {% endblock extra_head %}
     </head>
     <body hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
-        <canvas id="hyperspace-canvas" class="hyperspace-bg"></canvas>
-        <script>
-        (function(){
-            const canvas = document.getElementById('hyperspace-canvas');
-            const ctx = canvas.getContext('2d');
-            let width, height;
-
-            function resize() {
-                const ratio = window.innerWidth / window.innerHeight;
-                height = canvas.height = 180;
-                width = canvas.width = Math.floor(180 * ratio);
-            }
-            window.addEventListener('resize', resize);
-            resize();
-
-            const numStars = 150;
-            const stars = [];
-
-            for (let i = 0; i < numStars; i++) {
-                stars.push({
-                    x: Math.random() * 2000 - 1000,
-                    y: Math.random() * 2000 - 1000,
-                    z: Math.random() * 2000,
-                    color: '#ffffff'
-                });
-            }
-
-            function draw() {
-                ctx.fillStyle = '#000000';
-                ctx.fillRect(0, 0, width, height);
-
-                const cx = width / 2;
-                const cy = height / 2;
-
-                for (let i = 0; i < numStars; i++) {
-                    let star = stars[i];
-                    star.z -= 100;
-
-                    if (star.z <= 1) {
-                        star.z = 2000;
-                        star.x = Math.random() * 2000 - 1000;
-                        star.y = Math.random() * 2000 - 1000;
-                    }
-
-                    let x = Math.floor(cx + (star.x / star.z) * width);
-                    let y = Math.floor(cy + (star.y / star.z) * width);
-                    let size = Math.max(1, Math.floor((1 - star.z / 2000) * 3));
-
-                    ctx.fillStyle = star.color;
-                    ctx.fillRect(x, y, size, size);
-                }
-
-                requestAnimationFrame(draw);
-            }
-            draw();
-        })();
-        </script>
         {% block content %}
         {% endblock content %}
     </body>

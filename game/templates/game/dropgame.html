@@ -253,25 +253,32 @@ document.addEventListener('alpine:init', () => {
 
         endGame(won) {
             this.status = won ? 'won' : 'lost';
-            clearInterval(this.spawnLoop);
+            if (this.timerInterval) clearInterval(this.timerInterval);
+            if (this.spawnLoop) clearInterval(this.spawnLoop);
             if (this.gameLoop) cancelAnimationFrame(this.gameLoop);
 
-            fetch('{% url "game:update_state" %}', {
+            if (won) {
+                this.score += 50;
+            } else {
+                this.lives--;
+            }
+        },
+
+        async proceedToLevel() {
+            let finalLives = this.lives;
+            await fetch('{% url "game:update_state" %}', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     'X-CSRFToken': '{{ csrf_token }}'
                 },
                 body: JSON.stringify({
-                    score: won ? this.score + 50 : this.score,
-                    lives: won ? this.lives : this.lives - 1,
-                    level: this.level
+                    level: this.level + 1,
+                    score: this.score,
+                    lives: finalLives
                 })
             });
-        },
-
-        proceedToLevel() {
-            window.location.href = "{% url 'game:start' %}";
+            window.location.replace('{% url "game:game" %}');
         }
     }));
 });

@@ -167,21 +167,21 @@
     <!-- Result Area -->
     <div class="modal-overlay" x-show="status !== 'playing'" x-cloak>
         <div class="modal-content">
-        <h2 x-show="status === 'won'" style="color: #4CAF50;">FORZIERE APERTO! (+50 pt)</h2>
-        <h2 x-show="status === 'lost'" style="color: #f44336;">SERRATURA ROTTA... (-1 VITA)</h2>
-        <div x-show="status === 'lost'" style="margin-top:10px;">
-            <p>La combinazione era:</p>
-            <div style="display:flex; gap:10px; justify-content:center; margin-top:10px;">
-                <template x-for="col in secretCode">
-                    <div style="width:30px; height:30px; border-radius:50%; border:2px solid #fff;" :style="`background-color: ${col}`"></div>
-                </template>
+            <h2 x-show="status === 'won'" style="color: #4CAF50;">FORZIERE APERTO! (+50 pt)</h2>
+            <h2 x-show="status === 'lost'" style="color: #f44336;">SERRATURA ROTTA... (-1 VITA)</h2>
+            <div x-show="status === 'lost'" style="margin-top:10px;">
+                <p>La combinazione era:</p>
+                <div style="display:flex; gap:10px; justify-content:center; margin-top:10px;">
+                    <template x-for="col in secretCode">
+                        <div style="width:30px; height:30px; border-radius:50%; border:2px solid #fff;" :style="`background-color: ${col}`"></div>
+                    </template>
                 </div>
-    </div>
-        </div>
+            </div>
 
-        <button type="button" @click="proceedToLevel()" class="btn-option" style="margin-top: 20px; background-color: #9C27B0;">
-            ENTRA NEL LIVELLO <span x-text="level + 1"></span>
-        </button>
+            <button type="button" @click="proceedToLevel()" class="btn-option" style="margin-top: 20px; background-color: #9C27B0;">
+                ENTRA NEL LIVELLO <span x-text="level + 1"></span>
+            </button>
+        </div>
     </div>
 
 </div>

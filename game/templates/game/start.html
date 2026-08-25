@@ -1,17 +1,37 @@
 {% extends 'base.html' %}
 {% load static %}
 
+{% block extra_head %}
+<style>
+    @media (max-width: 600px) {
+        .desktop-desc {
+            display: none;
+        }
+        .start-logo {
+            max-width: 350px !important;
+            max-height: 25vh !important;
+        }
+    }
+    .start-logo {
+        width: 100%;
+        max-width: 450px;
+        max-height: 30vh;
+        object-fit: contain;
+        margin-bottom: 2vh;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; text-align: center; box-sizing: border-box;">
-    <img src="{% static 'game/images/logo.jpg' %}" alt="MonsterCraft Logo" style="width: 100%; max-width: 450px; max-height: 30vh; object-fit: contain; margin-bottom: 2vh;">
-    <p style="font-size: clamp(0.8rem, 2vh, 1.2rem); margin-bottom: 3vh; color: #ddd; max-width: 600px; line-height: 1.5;">
+    <img src="{% static 'game/images/logo.jpg' %}" alt="MonsterCraft Logo" class="start-logo">
+    <p class="desktop-desc" style="font-size: clamp(0.8rem, 2vh, 1.2rem); margin-bottom: 3vh; color: #ddd; max-width: 600px; line-height: 1.5;">
         Esplora il dungeon, rispondi alle domande dei mostri e sopravvivi alle trappole!<br>
         Quanti punti riuscirai a totalizzare?
     </p>
-    <form action="{% url 'game:start' %}" method="POST" style="display: flex; flex-direction: column; align-items: center; gap: 2vh;">
+    <form action="{% url 'game:start' %}" method="POST" style="display: flex; flex-direction: column; align-items: center; gap: 2vh; width: 100%;">
         {% csrf_token %}
         <div style="margin-bottom: 10px; display: flex; align-items: center; justify-content: center;">
-            <label for="age_group" style="font-size: 1rem; color: #FFEB3B; margin-right: 15px; font-family: 'Press Start 2P', cursive;">Fascia d'Età:</label>
             <select name="age_group" id="age_group" style="padding: 12px 30px 10px 10px; font-size: 0.8rem; border-radius: 5px; background-color: #333; color: white; border: 2px solid #555; font-family: 'Press Start 2P', cursive; line-height: 1.5; height: 45px; box-sizing: border-box; -webkit-appearance: none; -moz-appearance: none; appearance: none; background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23FFFFFF%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E'); background-repeat: no-repeat; background-position: right 10px center; background-size: 12px auto; cursor: pointer;">
                 <option value="5-8">5-8 anni</option>
                 <option value="9-12" selected>9-12 anni</option>
@@ -19,12 +39,15 @@
                 <option value="ADULT">Adulto</option>
             </select>
         </div>
-        <button type="submit" class="btn-option" style="font-size: clamp(1rem, 2.5vh, 1.2rem); padding: 2vh 4vw; display: inline-block; background-color: #F57C00; border-color: #E65100; cursor: pointer;">
-            🎮 START GAME
-        </button>
+
+        <div style="display: flex; gap: 10px; flex-wrap: wrap; justify-content: center;">
+            <button type="submit" class="btn-option" style="font-size: clamp(1rem, 2.5vh, 1.2rem); padding: 2vh 4vw; display: inline-block; background-color: #F57C00; border-color: #E65100; cursor: pointer;">
+                START
+            </button>
+            <a href="{% url 'game:leaderboard' %}" class="btn-option" style="text-decoration: none; font-size: clamp(1rem, 2.5vh, 1.2rem); padding: 2vh 4vw; display: flex; align-items: center; justify-content: center; background-color: #4CAF50; border-color: #388E3C; box-sizing: border-box;">
+                LEADERBOARD
+            </a>
+        </div>
     </form>
-    <a href="{% url 'game:leaderboard' %}" class="btn-option" style="text-decoration: none; font-size: clamp(1rem, 2.5vh, 1.2rem); padding: 2vh 4vw; display: inline-block; margin-top: 2vh; background-color: #4CAF50; border-color: #388E3C;">
-        🏆 LEADERBOARD
-    </a>
 </div>
 {% endblock %}

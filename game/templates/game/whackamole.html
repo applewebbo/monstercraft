@@ -158,13 +158,15 @@
     </div>
 
     <!-- Result Area -->
-    <div x-show="status === 'won' || status === 'lost'" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 20px; min-height: 50vh;" x-cloak>
+    <div class="modal-overlay" x-show="status === 'won' || status === 'lost'" x-cloak>
+        <div class="modal-content">
         <h2 x-show="status === 'won'" class="text-success">VITTORIA! (+50 pt)</h2>
         <h2 x-show="status === 'lost'" class="text-danger">TEMPO SCADUTO... (-1 VITA)</h2>
 
         <button type="button" @click="proceedToLevel()" class="btn-option" style="background-color: #03a9f4;">
             AVANTI
         </button>
+        </div>
     </div>
 
 </div>
